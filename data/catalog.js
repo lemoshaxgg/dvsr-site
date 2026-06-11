@@ -1,4 +1,4 @@
-export const categories = [
+﻿export const categories = [
   { id: 'all',       label: 'Все категории' },
   { id: 'fence3d',   label: '3D заборы и ворота' },
   { id: 'mesh',      label: 'Сетки' },
@@ -23,9 +23,62 @@ export const categories = [
   { id: 'forged',    label: 'Кованые элементы' },
   { id: 'garden',    label: 'Садовое оборудование' },
   { id: 'services',  label: 'Услуги' },
+  { id: 'cable',     label: 'Кабели и провода' },
+  { id: 'stainless', label: 'Нержавеющий прокат' },
+  { id: 'metalroll', label: 'Металлопрокат' },
+  { id: 'hatches',   label: 'Люки и шахты' },
+  { id: 'formwork',  label: 'Опалубочные системы' },
+  { id: 'machinery', label: 'Малая механизация' },
 ]
 
 export const subcategories = {
+  cable: [
+    { id: 'wire',          label: 'Провода' },
+    { id: 'cable_power',   label: 'Кабели силовые' },
+    { id: 'cable_signal',  label: 'Кабели сигнальные' },
+    { id: 'cable_other',   label: 'Прочее' },
+  ],
+  stainless: [
+    { id: 'stainless_bend',  label: 'Отводы' },
+    { id: 'stainless_pipe',  label: 'Трубы нержавеющие' },
+    { id: 'stainless_sheet', label: 'Листы нержавеющие' },
+    { id: 'stainless_fit',   label: 'Тройники и фитинги' },
+  ],
+  metalroll: [
+    { id: 'metalroll_sheet', label: 'Лист горячекатаный' },
+    { id: 'metalroll_pipe',  label: 'Трубы стальные' },
+    { id: 'metalroll_other', label: 'Прочее' },
+  ],
+  pipe: [
+    { id: 'pipe_ball',   label: 'Краны шаровые' },
+    { id: 'pipe_gate',   label: 'Задвижки' },
+    { id: 'pipe_valve',  label: 'Вентили' },
+    { id: 'pipe_check',  label: 'Клапаны и затворы' },
+    { id: 'pipe_filter', label: 'Фильтры' },
+    { id: 'pipe_other',  label: 'Прочее' },
+  ],
+  formwork: [
+    { id: 'small',    label: 'Мелкощитовая' },
+    { id: 'large',    label: 'Крупнощитовая' },
+    { id: 'slab',     label: 'Опалубка перекрытий' },
+    { id: 'consumable', label: 'Расходные материалы' },
+    { id: 'parts',    label: 'Комплектующие' },
+  ],
+  machinery: [
+    { id: 'trowel',   label: 'Затирочные машины' },
+    { id: 'mach_parts', label: 'Комплектующие' },
+  ],
+  hatches: [
+    { id: 'hatch_iron',    label: 'Люки чугунные' },
+    { id: 'hatch_polymer', label: 'Люки полимерные' },
+    { id: 'hatch_shaft',   label: 'Шахты и дождеприёмники' },
+  ],
+  plastic: [
+    { id: 'pnd',     label: 'Трубы ПНД' },
+    { id: 'pe',      label: 'Трубы ПЭ' },
+    { id: 'pp_pipe', label: 'Трубы ПП' },
+    { id: 'fittings', label: 'Фитинги и соединения' },
+  ],
   fence3d:  [
     { id: 'panels',   label: 'Панели 3D' },
     { id: 'posts',    label: 'Столбы' },
@@ -45,6 +98,7 @@ export const subcategories = {
   septic: [
     { id: 'rings',    label: 'Крышки и кольца' },
     { id: 'accum',    label: 'Накопительные' },
+    { id: 'topas',    label: 'ТОПАС' },
     { id: 'auto',     label: 'Автономные' },
   ],
   kesson: [
@@ -59,6 +113,8 @@ export const subcategories = {
     { id: 'cylinder', label: 'Цилиндрические' },
     { id: 'shower',   label: 'Для душа' },
     { id: 'rect',     label: 'Прямоугольные' },
+    { id: 'horiz',    label: 'Горизонтальные' },
+    { id: 'slim',     label: 'Узкие SLIM' },
   ],
   proflist: [
     { id: 'sheet',    label: 'Профнастил' },
@@ -107,16 +163,16 @@ export const items = [
   { id: 21,  category: 'mesh', sub: 'pvc',    icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Сетка ПВХ 1.2×30м (60×60×1.8мм)',      price: 'Уточнить', basePrice: 6000,  unit: 'рул', description: 'Сварная сетка с ПВХ покрытием 1.2×30м.' },
   { id: 22,  category: 'mesh', sub: 'pvc',    icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Сетка ПВХ 1.5×30м (60×60×1.8мм)',      price: 'Уточнить', basePrice: 6600,  unit: 'рул', description: 'Сварная сетка с ПВХ покрытием 1.5×30м.' },
   { id: 23,  category: 'mesh', sub: 'pvc',    icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Сетка ПВХ 1.8×30м (60×60×1.8мм)',      price: 'Уточнить', basePrice: 7500,  unit: 'рул', description: 'Сварная сетка с ПВХ покрытием 1.8×30м.' },
-  { id: 24,  category: 'mesh', sub: 'zinc',   icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Сетка оцинк. 0.5×5м (2×2см, 1.05мм)',  price: 'Уточнить', basePrice: 742,   unit: 'рул', description: 'Сварная оцинкованная сетка 0.5×5м, ячейка 2×2см.' },
-  { id: 25,  category: 'mesh', sub: 'zinc',   icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Сетка оцинк. 1×5м (2×2см, 1.05мм)',    price: 'Уточнить', basePrice: 1400,  unit: 'рул', description: 'Сварная оцинкованная сетка 1×5м, ячейка 2×2см.' },
-  { id: 26,  category: 'mesh', sub: 'zinc',   icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Сетка оцинк. 0.9×30м (2×2см)',         price: 'Уточнить', basePrice: 2050,  unit: 'рул', description: 'Сварная оцинкованная сетка 0.9×30м, ячейка 2×2см.' },
-  { id: 27,  category: 'mesh', sub: 'zinc',   icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Сетка оцинк. 1.2×18м (2.5×2.5см)',     price: 'Уточнить', basePrice: 4260,  unit: 'рул', description: 'Сварная оцинкованная сетка 1.2×18м.' },
-  { id: 28,  category: 'mesh', sub: 'zinc',   icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Сетка оцинк. 1.5×10м (5×5см, 2мм)',    price: 'Уточнить', basePrice: 4410,  unit: 'рул', description: 'Сварная оцинкованная сетка 1.5×10м, ячейка 5×5см.' },
-  { id: 29,  category: 'mesh', sub: 'zinc',   icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Сетка оцинк. 1.5×20м (5×5см, 2мм)',    price: 'Уточнить', basePrice: 8820,  unit: 'рул', description: 'Сварная оцинкованная сетка 1.5×20м.' },
-  { id: 30,  category: 'mesh', sub: 'rabica', icon: '🔗', photo: '/catalog/mesh-rabica.jpg', title: 'Рабица 1×27м (2×2мм, тонкая)',          price: 'Уточнить', basePrice: 9000,  unit: 'рул', description: 'Сетка рабица оцинкованная 1×27м, тонкая.' },
-  { id: 31,  category: 'mesh', sub: 'rabica', icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Рабица 1×27м (2×2мм, толстая)',         price: 'Уточнить', basePrice: 12900, unit: 'рул', description: 'Сетка рабица оцинкованная 1×27м, усиленная.' },
-  { id: 32,  category: 'mesh', sub: 'rabica', icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Рабица 1×27м (6×6мм)',                  price: 'Уточнить', basePrice: 12900, unit: 'рул', description: 'Сетка рабица оцинкованная 1×27м, ячейка 6×6мм.' },
-  { id: 33,  category: 'mesh', sub: 'rabica', icon: '🔗', photo: '/catalog/mesh.jpg', title: 'Рабица 1×27м (9×9мм)',                  price: 'Уточнить', basePrice: 12900, unit: 'рул', description: 'Сетка рабица оцинкованная 1×27м, ячейка 9×9мм.' },
+  { id: 24,  category: 'mesh', sub: 'zinc',   icon: '🔗', title: 'Сетка оцинк. 0.5×5м (2×2см, 1.05мм)',  price: 'Уточнить', basePrice: 742,   unit: 'рул', description: 'Сварная оцинкованная сетка 0.5×5м, ячейка 2×2см.' },
+  { id: 25,  category: 'mesh', sub: 'zinc',   icon: '🔗', title: 'Сетка оцинк. 1×5м (2×2см, 1.05мм)',    price: 'Уточнить', basePrice: 1400,  unit: 'рул', description: 'Сварная оцинкованная сетка 1×5м, ячейка 2×2см.' },
+  { id: 26,  category: 'mesh', sub: 'zinc',   icon: '🔗', title: 'Сетка оцинк. 0.9×30м (2×2см)',         price: 'Уточнить', basePrice: 2050,  unit: 'рул', description: 'Сварная оцинкованная сетка 0.9×30м, ячейка 2×2см.' },
+  { id: 27,  category: 'mesh', sub: 'zinc',   icon: '🔗', title: 'Сетка оцинк. 1.2×18м (2.5×2.5см)',     price: 'Уточнить', basePrice: 4260,  unit: 'рул', description: 'Сварная оцинкованная сетка 1.2×18м.' },
+  { id: 28,  category: 'mesh', sub: 'zinc',   icon: '🔗', title: 'Сетка оцинк. 1.5×10м (5×5см, 2мм)',    price: 'Уточнить', basePrice: 4410,  unit: 'рул', description: 'Сварная оцинкованная сетка 1.5×10м, ячейка 5×5см.' },
+  { id: 29,  category: 'mesh', sub: 'zinc',   icon: '🔗', title: 'Сетка оцинк. 1.5×20м (5×5см, 2мм)',    price: 'Уточнить', basePrice: 8820,  unit: 'рул', description: 'Сварная оцинкованная сетка 1.5×20м.' },
+  { id: 30,  category: 'mesh', sub: 'rabica', icon: '🔗', title: 'Рабица 1×27м (2×2мм, тонкая)',          price: 'Уточнить', basePrice: 9000,  unit: 'рул', description: 'Сетка рабица оцинкованная 1×27м, тонкая.' },
+  { id: 31,  category: 'mesh', sub: 'rabica', icon: '🔗', title: 'Рабица 1×27м (2×2мм, толстая)',         price: 'Уточнить', basePrice: 12900, unit: 'рул', description: 'Сетка рабица оцинкованная 1×27м, усиленная.' },
+  { id: 32,  category: 'mesh', sub: 'rabica', icon: '🔗', title: 'Рабица 1×27м (6×6мм)',                  price: 'Уточнить', basePrice: 12900, unit: 'рул', description: 'Сетка рабица оцинкованная 1×27м, ячейка 6×6мм.' },
+  { id: 33,  category: 'mesh', sub: 'rabica', icon: '🔗', title: 'Рабица 1×27м (9×9мм)',                  price: 'Уточнить', basePrice: 12900, unit: 'рул', description: 'Сетка рабица оцинкованная 1×27м, ячейка 9×9мм.' },
 
   // ─── СВАИ И ФУНДАМЕНТЫ ───────────────────────────────────────
   { id: 34,  category: 'piles', sub: 'lopast',   icon: '⚓', photo: '/catalog/piles-lopast.jpg', title: 'Свая лопастная 60×5×150×500мм',       price: 'Уточнить', basePrice: 1050,  unit: 'шт', description: 'Лопастная свая 60мм, длина 500мм.' },
@@ -145,11 +201,11 @@ export const items = [
   { id: 55,  category: 'septic', sub: 'rings', icon: '💧',                                    title: 'Крышка колодца/ёмкости',              price: 'Уточнить', basePrice: 4500,   unit: 'шт', description: 'Крышка для колодца или накопительной ёмкости.' },
   { id: 56,  category: 'septic', sub: 'rings', icon: '💧',                                    title: 'Доборное кольцо колодца 30см',        price: 'Уточнить', basePrice: 6500,   unit: 'шт', description: 'Удлинительное кольцо для колодца, высота 30см.' },
   { id: 57,  category: 'septic', sub: 'rings', icon: '💧',                                    title: 'Доборное кольцо колодца 50см',        price: 'Уточнить', basePrice: 7500,   unit: 'шт', description: 'Удлинительное кольцо для колодца, высота 50см.' },
-  { id: 58,  category: 'septic', sub: 'accum', icon: '💧', photo: '/catalog/septic.jpg',      title: 'Септик «ШАР» накопительный 1000л',    price: 'Уточнить', basePrice: 36000,  unit: 'шт', description: 'Накопительный септик ШАР объёмом 1000 литров.' },
-  { id: 59,  category: 'septic', sub: 'auto',  icon: '💧', photo: '/catalog/septic.jpg',      title: 'ПСБО «ШАР» автономная система',       price: 'Уточнить', basePrice: 49500,  unit: 'шт', description: 'Полная автономная система очистки ШАР.' },
-  { id: 60,  category: 'septic', sub: 'accum', icon: '💧', photo: '/catalog/septic.jpg',      title: 'Септик «ЖУК» накопительный 2500л',   price: 'Уточнить', basePrice: 79000,  unit: 'шт', description: 'Накопительный септик ЖУК объёмом 2500 литров.' },
-  { id: 61,  category: 'septic', sub: 'auto',  icon: '💧', photo: '/catalog/septic.jpg',      title: 'Септик ТВЕРЬ LITE 0.6Н',              price: 'Уточнить', basePrice: 80100,  unit: 'шт', description: 'Автономная канализация ТВЕРЬ LITE серия 0.6Н.' },
-  { id: 62,  category: 'septic', sub: 'auto',  icon: '💧', photo: '/catalog/septic.jpg',      title: 'Септик «СКАРАБЕЙ» 5000л',             price: 'Уточнить', basePrice: 117000, unit: 'шт', description: 'Накопительный септик СКАРАБЕЙ объёмом 5000 литров.' },
+  { id: 58,  category: 'septic', sub: 'accum', icon: '💧',      title: 'Септик «ШАР» накопительный 1000л',    price: 'Уточнить', basePrice: 36000,  unit: 'шт', description: 'Накопительный септик ШАР объёмом 1000 литров.' },
+  { id: 59,  category: 'septic', sub: 'auto',  icon: '💧',      title: 'ПСБО «ШАР» автономная система',       price: 'Уточнить', basePrice: 49500,  unit: 'шт', description: 'Полная автономная система очистки ШАР.' },
+  { id: 60,  category: 'septic', sub: 'accum', icon: '💧',      title: 'Септик «ЖУК» накопительный 2500л',   price: 'Уточнить', basePrice: 79000,  unit: 'шт', description: 'Накопительный септик ЖУК объёмом 2500 литров.' },
+  { id: 61,  category: 'septic', sub: 'auto',  icon: '💧',      title: 'Септик ТВЕРЬ LITE 0.6Н',              price: 'Уточнить', basePrice: 80100,  unit: 'шт', description: 'Автономная канализация ТВЕРЬ LITE серия 0.6Н.' },
+  { id: 62,  category: 'septic', sub: 'auto',  icon: '💧',      title: 'Септик «СКАРАБЕЙ» 5000л',             price: 'Уточнить', basePrice: 117000, unit: 'шт', description: 'Накопительный септик СКАРАБЕЙ объёмом 5000 литров.' },
 
   // ─── КЕССОНЫ ─────────────────────────────────────────────────
   { id: 63,  category: 'kesson', sub: 'sfera',  icon: '🏗️', title: 'Кессон «Шар» сферический',           price: 'Уточнить', basePrice: 35500,  unit: 'шт', description: 'Пластиковый кессон сферической формы.' },
@@ -308,6 +364,91 @@ export const items = [
   { id: 188, category: 'plumbing', title: 'Унитазы компакт',        price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Унитазы-компакт, подвесные, напольные. Эконом и премиум сегмент.' },
   { id: 189, category: 'plumbing', title: 'Смесители',              price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Смесители для ванны, душа, кухни. Однорычажные и двухвентильные.' },
   { id: 190, category: 'plumbing', title: 'Душевые кабины и поддоны', price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Душевые кабины и поддоны различных размеров. Монтаж включён.' },
+
+  // ─── ЁМКОСТИ БОЛЬШИЕ (800–10000л) ───────────────────────────
+  { id: 191, category: 'tanks', sub: 'cylinder', icon: '🛢️', title: 'Ёмкость цилиндрическая 800л',    price: 'Уточнить', basePrice: 18000,  unit: 'шт', description: 'Вертикальная пластиковая ёмкость 800 литров. ПНД, пищевая.' },
+  { id: 192, category: 'tanks', sub: 'cylinder', icon: '🛢️', title: 'Ёмкость цилиндрическая 1000л',   price: 'Уточнить', basePrice: 21000,  unit: 'шт', description: 'Вертикальная пластиковая ёмкость 1000 литров. ПНД, пищевая.' },
+  { id: 193, category: 'tanks', sub: 'cylinder', icon: '🛢️', title: 'Ёмкость цилиндрическая 1200л',   price: 'Уточнить', basePrice: 23000,  unit: 'шт', description: 'Вертикальная пластиковая ёмкость 1200 литров. ПНД, пищевая.' },
+  { id: 194, category: 'tanks', sub: 'cylinder', icon: '🛢️', title: 'Ёмкость цилиндрическая 2000л',   price: 'Уточнить', basePrice: 32000,  unit: 'шт', description: 'Вертикальная пластиковая ёмкость 2000 литров. Для воды и топлива.' },
+  { id: 195, category: 'tanks', sub: 'cylinder', icon: '🛢️', title: 'Ёмкость цилиндрическая 3000л',   price: 'Уточнить', basePrice: 45000,  unit: 'шт', description: 'Вертикальная пластиковая ёмкость 3000 литров.' },
+  { id: 196, category: 'tanks', sub: 'cylinder', icon: '🛢️', title: 'Ёмкость цилиндрическая 5000л',   price: 'Уточнить', basePrice: 68000,  unit: 'шт', description: 'Вертикальная пластиковая ёмкость 5000 литров.' },
+  { id: 197, category: 'tanks', sub: 'cylinder', icon: '🛢️', title: 'Ёмкость цилиндрическая 10000л',  price: 'Уточнить', basePrice: 135000, unit: 'шт', description: 'Вертикальная пластиковая ёмкость 10 000 литров.' },
+
+  // ─── ЁМКОСТИ ГОРИЗОНТАЛЬНЫЕ ──────────────────────────────────
+  { id: 198, category: 'tanks', sub: 'horiz', icon: '🛢️', title: 'Ёмкость горизонтальная 500л',   price: 'Уточнить', basePrice: 14000, unit: 'шт', description: 'Горизонтальная пластиковая ёмкость 500 литров. Для транспортировки и хранения.' },
+  { id: 199, category: 'tanks', sub: 'horiz', icon: '🛢️', title: 'Ёмкость горизонтальная 1000л',  price: 'Уточнить', basePrice: 22000, unit: 'шт', description: 'Горизонтальная пластиковая ёмкость 1000 литров.' },
+  { id: 200, category: 'tanks', sub: 'horiz', icon: '🛢️', title: 'Ёмкость горизонтальная 2000л',  price: 'Уточнить', basePrice: 38000, unit: 'шт', description: 'Горизонтальная пластиковая ёмкость 2000 литров.' },
+  { id: 201, category: 'tanks', sub: 'horiz', icon: '🛢️', title: 'Ёмкость горизонтальная 3000л',  price: 'Уточнить', basePrice: 52000, unit: 'шт', description: 'Горизонтальная пластиковая ёмкость 3000 литров.' },
+
+  // ─── ЁМКОСТИ УЗКИЕ SLIM ──────────────────────────────────────
+  { id: 202, category: 'tanks', sub: 'slim', icon: '🛢️', title: 'Ёмкость SLIM 100л',   price: 'Уточнить', basePrice: 5500,  unit: 'шт', description: 'Узкая пластиковая ёмкость SLIM 100 литров. Проходит в стандартный дверной проём.' },
+  { id: 203, category: 'tanks', sub: 'slim', icon: '🛢️', title: 'Ёмкость SLIM 200л',   price: 'Уточнить', basePrice: 9000,  unit: 'шт', description: 'Узкая пластиковая ёмкость SLIM 200 литров. Для узких пространств.' },
+  { id: 204, category: 'tanks', sub: 'slim', icon: '🛢️', title: 'Ёмкость SLIM 500л',   price: 'Уточнить', basePrice: 18500, unit: 'шт', description: 'Узкая пластиковая ёмкость SLIM 500 литров.' },
+  { id: 205, category: 'tanks', sub: 'slim', icon: '🛢️', title: 'Ёмкость SLIM 1000л',  price: 'Уточнить', basePrice: 32000, unit: 'шт', description: 'Узкая пластиковая ёмкость SLIM 1000 литров.' },
+
+  // ─── СЕПТИКИ ТОПАС ───────────────────────────────────────────
+  { id: 206, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 4',         price: 'Уточнить', basePrice: 145980, unit: 'шт', description: 'Станция биологической очистки ТОПАС 4. До 4 человек, 0.8 м³/сут.' },
+  { id: 207, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 5',         price: 'Уточнить', basePrice: 168000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 5. До 5 человек, 1.0 м³/сут.' },
+  { id: 208, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 6',         price: 'Уточнить', basePrice: 188000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 6. До 6 человек, 1.2 м³/сут.' },
+  { id: 209, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 8',         price: 'Уточнить', basePrice: 215000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 8. До 8 человек, 1.5 м³/сут.' },
+  { id: 210, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 10',        price: 'Уточнить', basePrice: 248000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 10. До 10 человек, 2.0 м³/сут.' },
+  { id: 211, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 12',        price: 'Уточнить', basePrice: 285000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 12. До 12 человек, 2.4 м³/сут.' },
+  { id: 212, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 15',        price: 'Уточнить', basePrice: 351270, unit: 'шт', description: 'Станция биологической очистки ТОПАС 15. До 15 человек, 3.0 м³/сут.' },
+  { id: 213, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 5 Long',    price: 'Уточнить', basePrice: 195000, unit: 'шт', description: 'ТОПАС 5 Long — удлинённый корпус для глубокого залегания грунтовых вод.' },
+  { id: 214, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 8 Long',    price: 'Уточнить', basePrice: 238000, unit: 'шт', description: 'ТОПАС 8 Long — удлинённый корпус для глубокого залегания грунтовых вод.' },
+  { id: 215, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 5 PR',     price: 'Уточнить', basePrice: 185000, unit: 'шт', description: 'ТОПАС 5 PR — принудительный насос для откачки на рельеф.' },
+  { id: 216, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 8 PR',     price: 'Уточнить', basePrice: 225000, unit: 'шт', description: 'ТОПАС 8 PR — принудительный насос для откачки на рельеф.' },
+
+  // ─── 3D ПАНЕЛИ ЦВЕТНЫЕ ───────────────────────────────────────
+  { id: 217, category: 'fence3d', sub: 'panels', icon: '🔲', photo: '/catalog/panel-3d-1.jpg', title: '3D панель цветная 1500×2500 RAL 6005 (зелёный)',   price: 'Уточнить', basePrice: 2200, unit: 'шт', description: 'Цветная 3D панель с полимерным покрытием RAL 6005 (тёмно-зелёный). 1500×2500мм, d4мм.' },
+  { id: 218, category: 'fence3d', sub: 'panels', icon: '🔲', photo: '/catalog/panel-3d-2.jpg', title: '3D панель цветная 1500×2500 RAL 7016 (антрацит)',   price: 'Уточнить', basePrice: 2200, unit: 'шт', description: 'Цветная 3D панель с полимерным покрытием RAL 7016 (антрацит). 1500×2500мм, d4мм.' },
+  { id: 219, category: 'fence3d', sub: 'panels', icon: '🔲', photo: '/catalog/panel-3d-3.jpg', title: '3D панель цветная 1500×2500 RAL 8017 (коричневый)', price: 'Уточнить', basePrice: 2200, unit: 'шт', description: 'Цветная 3D панель с полимерным покрытием RAL 8017 (коричневый). 1500×2500мм, d4мм.' },
+  { id: 220, category: 'fence3d', sub: 'panels', icon: '🔲', photo: '/catalog/panel-3d-4.jpg', title: '3D панель цветная 2000×2500 RAL 6005 (зелёный)',   price: 'Уточнить', basePrice: 2800, unit: 'шт', description: 'Цветная 3D панель с полимерным покрытием RAL 6005 (тёмно-зелёный). 2000×2500мм, d4мм.' },
+  { id: 221, category: 'fence3d', sub: 'panels', icon: '🔲', photo: '/catalog/panel-3d-1.jpg', title: '3D панель цветная 2000×2500 RAL 7016 (антрацит)',   price: 'Уточнить', basePrice: 2800, unit: 'шт', description: 'Цветная 3D панель с полимерным покрытием RAL 7016 (антрацит). 2000×2500мм, d4мм.' },
+
+  // ─── ОПАЛУБОЧНЫЕ СИСТЕМЫ ─────────────────────────────────────
+  { id: 222, category: 'formwork', sub: 'small', icon: '🏗️', title: 'Щит опалубки 200×1200мм',          price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит мелкощитовой опалубки 200×1200мм. Стальная рама, ламинированная фанера.' },
+  { id: 223, category: 'formwork', sub: 'small', icon: '🏗️', title: 'Щит опалубки 300×1200мм',          price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит мелкощитовой опалубки 300×1200мм. Стальная рама, ламинированная фанера.' },
+  { id: 224, category: 'formwork', sub: 'small', icon: '🏗️', title: 'Щит опалубки 400×1200мм',          price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит мелкощитовой опалубки 400×1200мм. Стальная рама, ламинированная фанера.' },
+  { id: 225, category: 'formwork', sub: 'small', icon: '🏗️', title: 'Щит опалубки 600×1200мм',          price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит мелкощитовой опалубки 600×1200мм. Стальная рама, ламинированная фанера.' },
+  { id: 226, category: 'formwork', sub: 'small', icon: '🏗️', title: 'Щит опалубки 200×1500мм',          price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит мелкощитовой опалубки 200×1500мм. Стальная рама, ламинированная фанера.' },
+  { id: 227, category: 'formwork', sub: 'small', icon: '🏗️', title: 'Щит опалубки 400×1500мм',          price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит мелкощитовой опалубки 400×1500мм. Стальная рама, ламинированная фанера.' },
+  { id: 228, category: 'formwork', sub: 'small', icon: '🏗️', title: 'Щит опалубки 600×1500мм',          price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит мелкощитовой опалубки 600×1500мм. Стальная рама, ламинированная фанера.' },
+  { id: 229, category: 'formwork', sub: 'small', icon: '🏗️', title: 'Угол внутренний 150×150×1500мм',   price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Угловой элемент внутренний для мелкощитовой опалубки 150×150×1500мм.' },
+  { id: 230, category: 'formwork', sub: 'small', icon: '🏗️', title: 'Угол наружный 65×65×3000мм',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Угловой элемент наружный для мелкощитовой опалубки 65×65×3000мм.' },
+  { id: 231, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Щит линейный 0.3×3.0м',            price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит крупнощитовой опалубки линейный, ширина 300мм, высота 3000мм.' },
+  { id: 232, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Щит линейный 0.6×3.0м',            price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит крупнощитовой опалубки линейный, ширина 600мм, высота 3000мм.' },
+  { id: 233, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Щит линейный 0.9×3.0м',            price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит крупнощитовой опалубки линейный, ширина 900мм, высота 3000мм.' },
+  { id: 234, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Щит линейный 1.2×3.0м',            price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит крупнощитовой опалубки линейный, ширина 1200мм, высота 3000мм.' },
+  { id: 235, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Щит линейный 0.6×3.3м',            price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит крупнощитовой опалубки линейный, ширина 600мм, высота 3300мм.' },
+  { id: 236, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Щит линейный 1.2×3.3м',            price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит крупнощитовой опалубки линейный, ширина 1200мм, высота 3300мм.' },
+  { id: 237, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Щит универсальный 3.0м',           price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Универсальный щит крупнощитовой опалубки высотой 3000мм. Для углов, колонн.' },
+  { id: 238, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Щит универсальный 3.3м',           price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Универсальный щит крупнощитовой опалубки высотой 3300мм.' },
+  { id: 239, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Щит доборный (до 2.7м)',           price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Щит доборный для нестандартных высот, до 2700мм.' },
+  { id: 240, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Угол внутренний 3.0м',             price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Угловой элемент внутренний крупнощитовой опалубки 3000мм.' },
+  { id: 241, category: 'formwork', sub: 'large', icon: '🏗️', title: 'Угол наружный 3.0м',               price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Угловой элемент наружный крупнощитовой опалубки 3000мм.' },
+  { id: 242, category: 'formwork', sub: 'slab',  icon: '🏗️', title: 'Опалубка перекрытий (аренда)',     price: 'Уточнить', basePrice: null, unit: 'м²', description: 'Аренда опалубки перекрытий. Стойки, треноги, балки, фанера.' },
+  { id: 243, category: 'formwork', sub: 'consumable', icon: '🪵', title: 'Фанера ламинированная 12мм 1220×2440мм', price: 'Уточнить', basePrice: null, unit: 'лист', description: 'Ламинированная влагостойкая фанера 12мм для опалубки. 1220×2440мм.' },
+  { id: 244, category: 'formwork', sub: 'consumable', icon: '🪵', title: 'Фанера ламинированная 18мм 1220×2440мм', price: 'Уточнить', basePrice: null, unit: 'лист', description: 'Ламинированная влагостойкая фанера 18мм для опалубки. 1220×2440мм.' },
+  { id: 245, category: 'formwork', sub: 'consumable', icon: '🪵', title: 'Фанера ламинированная 21мм 1220×2440мм', price: 'Уточнить', basePrice: null, unit: 'лист', description: 'Ламинированная влагостойкая фанера 21мм для опалубки. 1220×2440мм.' },
+  { id: 246, category: 'formwork', sub: 'parts', icon: '🔩', title: 'Стяжка опалубочная 15мм',            price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Стяжной болт для опалубки Ø15мм. Обеспечивает фиксацию щитов.' },
+  { id: 247, category: 'formwork', sub: 'parts', icon: '🔩', title: 'Конус пластиковый для стяжки',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Пластиковый конус для стяжного болта опалубки.' },
+  { id: 248, category: 'formwork', sub: 'parts', icon: '🔩', title: 'Замок клиновой для опалубки',        price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Клиновой замок для соединения щитов опалубки.' },
+  { id: 249, category: 'formwork', sub: 'parts', icon: '🔩', title: 'Подкос опалубки регулируемый',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Регулируемый подкос для выравнивания опалубки. Длина 1.5–3.5м.' },
+
+  // ─── МАЛАЯ МЕХАНИЗАЦИЯ ───────────────────────────────────────
+  { id: 250, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/PT900D.webp', title: 'Затирочная машина GIKS PT900D',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Профессиональная затирочная машина GIKS PT900D. Диаметр ∅900мм, двигатель Honda GX690, 4 лопасти.' },
+  { id: 251, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/PT600H.webp', title: 'Затирочная машина GIKS PT600H',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина GIKS PT600H. Диаметр ∅600мм, двигатель Honda GX200, 4 лопасти.' },
+  { id: 252, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/PT600D.webp', title: 'Затирочная машина GIKS PT600D',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина GIKS PT600D. Диаметр ∅600мм, двигатель Dunfeng, 4 лопасти.' },
+  { id: 253, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/mt-364-1.webp', title: 'Затирочная машина KOMAN MT36-4 ST',  price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина KOMAN MT36-4 ST. Диаметр ∅900мм, Honda GX390, 4 лопасти, электростартер.' },
+  { id: 254, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/mt-364-1.webp', title: 'Затирочная машина KOMAN MT36-4',     price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина KOMAN MT36-4. Диаметр ∅900мм, Loncin/Honda GX390, 4 лопасти.' },
+  { id: 255, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/mrt73_optimized.webp', title: 'Затирочная машина KOMAN MRT73',      price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Двухроторная затирочная машина KOMAN MRT73. Рабочая ширина ∅1800мм. Для больших площадей.' },
+  { id: 256, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/mt-36-2.webp', title: 'Затирочная машина KOMAN MT36-2ST',   price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина KOMAN MT36-2ST. Диаметр ∅900мм, 2 лопасти, электростартер.' },
+  { id: 257, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/lopast-koman2_optimized.webp', title: 'Лопасти 6"×14" комб. для MT36/MRT73',  price: 'Уточнить', basePrice: null, unit: 'компл', description: 'Лопасти комбинированные 6"×14" для затирочных машин KOMAN MT36 и MRT73.' },
+  { id: 258, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/disc-koman2_optimized.png', title: 'Диск затирочный 37" для MT36/MRT73',  price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Диск затирочный 37" (940мм) для KOMAN MT36 и MRT73.' },
+  { id: 259, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/disc-koman.png', title: 'Диск затирочный 31" для MT30',         price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Диск затирочный 31" (785мм) для KOMAN MT30.' },
+  { id: 260, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/lopast-koman_optimized.webp', title: 'Лопасти 4.75"×9" комб. для MT24',      price: 'Уточнить', basePrice: null, unit: 'компл', description: 'Лопасти комбинированные 4.75"×9" для затирочной машины KOMAN MT24.' },
+  { id: 261, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/disc-koman.png', title: 'Диск затирочный 25" для MT24',         price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Диск затирочный 25" (635мм) для KOMAN MT24.' },
 
   // ─── УСЛУГИ ───────────────────────────────────────────────────
   { id: 154, category: 'services', icon: '🔩', title: 'Установка забора под ключ',           price: 'Уточнить', basePrice: null, unit: 'м.п.', description: 'Монтаж забора любого типа под ключ. Столбы в бетон.' },

@@ -8,7 +8,6 @@
     <ReviewsSection />
     <MapSection />
     <ContactForm />
-    <TelegramBtn />
 
     <footer class="footer">
       <div class="footer__inner">
@@ -23,6 +22,18 @@
     </footer>
   </main>
 </template>
+
+<script setup>
+useHead({ title: 'ДСР — Дальневосточные Системы Развития | Владивосток' })
+useSeoMeta({
+  description: 'ООО ДСР — строительные материалы, трубопроводная арматура, металлопрокат, септики, заборы 3D, сваи и оборудование во Владивостоке. Более 2300 позиций в каталоге.',
+  ogTitle: 'ДСР — Дальневосточные Системы Развития',
+  ogDescription: 'Строительные материалы и оборудование во Владивостоке. Более 2300 позиций. Звоните: +7 914 329-29-29',
+  ogImage: 'https://dvsr-site.vercel.app/og-dsr.jpg',
+  ogUrl: 'https://dvsr-site.vercel.app',
+  twitterCard: 'summary_large_image',
+})
+</script>
 
 <style scoped>
 .footer {

@@ -14,8 +14,8 @@
           </h1>
           <p class="ap-hero__sub">Снабжение. Строительство. Спецтехника — всё для Дальнего Востока</p>
           <div class="ap-hero__meta">
-            <span>📍 Владивосток, ул. Русская, 17</span>
-            <span>📞 <a href="tel:+79143292929">+7 914 329-29-29</a></span>
+            <span>Владивосток, ул. Русская, 17</span>
+            <span><a href="tel:+79143292929">+7 914 329-29-29</a></span>
           </div>
         </div>
       </section>
@@ -257,7 +257,13 @@
 
 <script setup>
 import { useScrollReveal } from '~/composables/useScrollReveal'
-useHead({ title: 'О компании – ДСР' })
+useHead({ title: 'О компании — ДСР Владивосток' })
+useSeoMeta({
+  description: 'ООО ДСР — владивостокская компания по поставке строительных материалов и оборудования. Работаем с 2015 года. Адрес: ул. Русская, 17, каб. 704.',
+  ogTitle: 'О компании ДСР — Владивосток',
+  ogDescription: 'Поставка строительных материалов, металлопроката, трубопроводной арматуры и оборудования по Приморскому краю.',
+  ogUrl: 'https://dvsr-site.vercel.app/about',
+})
 useScrollReveal()
 </script>
 

@@ -16,7 +16,7 @@
 
           <div class="form-group">
             <label class="form-label">Телефон <span class="form-required">*</span></label>
-            <input v-model="form.phone" type="tel" class="form-input" :class="{ 'form-input--error': errors.phone }" placeholder="+7 914 000-00-00" maxlength="20" />
+            <input :value="form.phone" @input="form.phone = phoneMask($event.target.value)" type="tel" class="form-input" :class="{ 'form-input--error': errors.phone }" placeholder="+7 (___) ___-__-__" maxlength="18" />
             <span v-if="errors.phone" class="form-error">{{ errors.phone }}</span>
           </div>
 
@@ -76,6 +76,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useScrollReveal } from '~/composables/useScrollReveal'
+import { phoneMask } from '~/composables/usePhoneMask.js'
 useScrollReveal()
 
 const loading = ref(false)

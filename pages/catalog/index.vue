@@ -12,7 +12,26 @@
           <nav class="catalog__breadcrumb">
             <a href="/">Главная</a>
             <span>/</span>
-            <span>Каталог</span>
+            <template v-if="activeCategory === 'all' && !searchQuery">
+              <span>Каталог</span>
+            </template>
+            <template v-else-if="searchQuery">
+              <a href="/catalog" @click.prevent="activeCategory = 'all'; searchQuery = ''">Каталог</a>
+              <span>/</span>
+              <span>Поиск: {{ searchQuery }}</span>
+            </template>
+            <template v-else>
+              <a href="/catalog" @click.prevent="activeCategory = 'all'; searchQuery = ''">Каталог</a>
+              <span>/</span>
+              <template v-if="activeSub">
+                <a href="#" @click.prevent="activeSub = null">{{ currentCategory?.label }}</a>
+                <span>/</span>
+                <span>{{ currentSubs.find(s => s.id === activeSub)?.label }}</span>
+              </template>
+              <template v-else>
+                <span>{{ currentCategory?.label }}</span>
+              </template>
+            </template>
           </nav>
           <h1 class="catalog__title">Каталог услуг и товаров</h1>
 
@@ -44,7 +63,7 @@
                     class="catalog__suggestion-item"
                     @click="selectSuggestion(item)"
                   >
-                    <span class="catalog__suggestion-icon">{{ item.icon }}</span>
+                    <svg class="catalog__suggestion-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M3 16l5-5 4 4 3-3 6 6"/></svg>
                     <span class="catalog__suggestion-info">
                       <span class="catalog__suggestion-title">{{ item.title }}</span>
                       <span class="catalog__suggestion-cat">{{ categoryMap[item.category] }}</span>
@@ -55,14 +74,39 @@
               </transition>
             </div>
 
-            <!-- Фильтр по цене в шапке -->
+            <!-- Фильтр по цене — слайдер -->
             <div class="catalog__hero-price">
-              <div class="catalog__hero-price-inputs">
+              <div class="catalog__price-header">
                 <span class="catalog__hero-price-label">Цена, ₽</span>
-                <input v-model.number="priceMin" type="number" class="catalog__hero-price-input" placeholder="от" min="0" />
-                <span class="catalog__hero-price-dash">—</span>
-                <input v-model.number="priceMax" type="number" class="catalog__hero-price-input" placeholder="до" min="0" />
-                <button v-if="priceFilterActive" class="catalog__hero-price-reset" @click="resetPrice">✕</button>
+                <span class="catalog__price-display">
+                  {{ sliderMin > priceAbsMin ? formatPrice(sliderMin) : 'от 0' }}
+                  &nbsp;—&nbsp;
+                  {{ sliderMax < priceAbsMax ? formatPrice(sliderMax) : 'любая' }}
+                </span>
+                <button v-if="priceFilterActive" class="catalog__hero-price-reset" @click="resetPrice">Сбросить</button>
+              </div>
+              <div class="catalog__range-wrap">
+                <div class="catalog__range-track">
+                  <div class="catalog__range-fill" :style="rangeFillStyle"></div>
+                </div>
+                <input
+                  v-model.number="sliderMin"
+                  type="range"
+                  class="catalog__range catalog__range--min"
+                  :min="priceAbsMin"
+                  :max="priceAbsMax"
+                  :step="rangeStep"
+                  @input="onSliderMin"
+                />
+                <input
+                  v-model.number="sliderMax"
+                  type="range"
+                  class="catalog__range catalog__range--max"
+                  :min="priceAbsMin"
+                  :max="priceAbsMax"
+                  :step="rangeStep"
+                  @input="onSliderMax"
+                />
               </div>
               <div class="catalog__hero-price-presets">
                 <button class="catalog__hero-price-preset" :class="{ active: priceMin === null && priceMax === 5000 }"    @click="setPricePreset(null, 5000)">до 5 000</button>
@@ -110,6 +154,7 @@
                 class="catalog__cat-card"
                 @click="activeCategory = cat.id"
               >
+                <span class="catalog__cat-card-icon">{{ catIcons[cat.id] || '📦' }}</span>
                 <span class="catalog__cat-card-label">{{ cat.label }}</span>
                 <span class="catalog__cat-card-count">{{ countByCategory(cat.id) }} позиций</span>
                 <svg class="catalog__cat-card-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
@@ -122,7 +167,7 @@
           <!-- Популярные товары (когда выбрано "Все" и нет поиска) -->
           <transition name="fade">
             <div v-if="activeCategory === 'all' && !searchQuery" class="catalog__popular">
-              <h3 class="catalog__popular-title">⭐ Популярные позиции</h3>
+              <h3 class="catalog__popular-title">Популярные позиции</h3>
               <div class="catalog__list">
                 <div v-for="item in popularItems" :key="item.id" class="catalog-item" @click="openDetail(item)">
                   <div class="catalog-item__img">
@@ -150,6 +195,9 @@
                         <span class="catalog-item__price catalog-item__price--ask">Уточнить цену</span>
                       </div>
                       <button class="catalog-item__btn" @click.stop="openOrder(item)">Оставить заявку</button>
+                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" @click.stop="addItem(item)" :title="hasItem(item.id) ? 'В списке' : 'Добавить в список'">
+                    {{ hasItem(item.id) ? '✓' : '+' }}
+                  </button>
                     </div>
                   </div>
                 </div>
@@ -162,9 +210,18 @@
             <h2 class="catalog__section-title">
               {{ searchQuery ? `Результаты: «${searchQuery}»` : currentCategory?.label }}
             </h2>
-            <button class="catalog__section-reset" @click="activeCategory = 'all'; searchQuery = ''">
-              ← Все категории
-            </button>
+            <div class="catalog__section-right">
+              <select v-model="sortBy" class="catalog__sort-select">
+                <option value="default">По умолчанию</option>
+                <option value="name_asc">Название А–Я</option>
+                <option value="name_desc">Название Я–А</option>
+                <option value="price_asc">Цена: дешевле</option>
+                <option value="price_desc">Цена: дороже</option>
+              </select>
+              <button class="catalog__section-reset" @click="activeCategory = 'all'; searchQuery = ''">
+                ← Все категории
+              </button>
+            </div>
           </div>
 
           <!-- Подкатегории -->
@@ -229,27 +286,45 @@
 
           <!-- Пусто -->
           <div v-if="filteredItems.length === 0" class="catalog__empty">
-            <span class="catalog__empty-icon">🔍</span>
+            <svg class="catalog__empty-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M21 21l-4.35-4.35"/></svg>
             <p>По запросу <strong>«{{ searchQuery }}»</strong> ничего не найдено</p>
             <button class="catalog__empty-btn" @click="searchQuery = ''; activeCategory = 'all'">Сбросить фильтры</button>
           </div>
 
+          <!-- Счётчик позиций -->
+          <div v-if="filteredItems.length > 0 && (activeCategory !== 'all' || searchQuery)" class="catalog__count">
+            Показано {{ paginatedItems.length }} из {{ filteredItems.length }}
+          </div>
+
+          <!-- Skeleton пока грузятся доп. позиции -->
+          <div v-if="catalogPending && filteredItems.length === 0" class="catalog__list">
+            <div v-for="n in 12" :key="n" class="catalog-skeleton">
+              <div class="catalog-skeleton__img"></div>
+              <div class="catalog-skeleton__body">
+                <div class="catalog-skeleton__line catalog-skeleton__line--sm"></div>
+                <div class="catalog-skeleton__line catalog-skeleton__line--lg"></div>
+                <div class="catalog-skeleton__line catalog-skeleton__line--md"></div>
+                <div class="catalog-skeleton__footer"></div>
+              </div>
+            </div>
+          </div>
+
           <!-- Список услуг -->
-          <transition-group v-else name="list" tag="div" class="catalog__list">
-            <div v-for="item in filteredItems" :key="item.id" class="catalog-item" @click="openDetail(item)">
+          <div v-if="filteredItems.length > 0" class="catalog__list">
+            <div v-for="item in paginatedItems" :key="item.id" class="catalog-item" @click="openDetail(item)">
               <div class="catalog-item__img">
                 <template v-if="item.photos && item.photos.length > 1">
-                  <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" />
+                  <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" loading="lazy" />
                   <button class="ci-carousel__prev" @click.stop="prevPhoto(item.id, item.photos.length)">&#8249;</button>
                   <button class="ci-carousel__next" @click.stop="nextPhoto(item.id, item.photos.length)">&#8250;</button>
                   <div class="ci-carousel__dots">
                     <span v-for="(_, i) in item.photos" :key="i" class="ci-carousel__dot" :class="{ active: i === getPhotoIdx(item.id) }" @click.stop="setPhotoIdx(item.id, i)"></span>
                   </div>
                 </template>
-                <img v-else-if="item.photo || item.photos" :src="item.photo || item.photos[0]" :alt="item.title" />
+                <img v-else-if="item.photo || item.photos" :src="item.photo || item.photos[0]" :alt="item.title" loading="lazy" />
                 <div v-else class="catalog-item__placeholder">
                   <div class="catalog-item__placeholder-empty">
-                    <span class="catalog-item__placeholder-icon">{{ item.icon }}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" class="catalog-item__placeholder-icon"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/></svg>
                     <span class="catalog-item__placeholder-text">Фото скоро</span>
                   </div>
                 </div>
@@ -263,10 +338,21 @@
                     <span class="catalog-item__price catalog-item__price--ask">Уточнить цену</span>
                   </div>
                   <button class="catalog-item__btn" @click.stop="openOrder(item)">Оставить заявку</button>
+                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" @click.stop="addItem(item)" :title="hasItem(item.id) ? 'В списке' : 'Добавить в список'">
+                    {{ hasItem(item.id) ? '✓' : '+' }}
+                  </button>
                 </div>
               </div>
             </div>
-          </transition-group>
+          </div>
+
+          <!-- Кнопка "Показать ещё" -->
+          <div v-if="paginatedItems.length < filteredItems.length" class="catalog__load-more">
+            <button class="catalog__load-more-btn" @click="visibleCount += 24">
+              Показать ещё {{ Math.min(24, filteredItems.length - paginatedItems.length) }}
+              <span class="catalog__load-more-total">из {{ filteredItems.length - paginatedItems.length }} оставшихся</span>
+            </button>
+          </div>
         </div>
       </div>
     </main>
@@ -299,6 +385,7 @@
             <div class="detail__price detail__price--ask">Уточнить цену</div>
             <div class="detail__actions">
               <button class="catalog-item__btn detail__btn" @click="openOrder(detailItem); detailItem = null">Оставить заявку</button>
+              <a :href="`/catalog/${detailItem.id}`" class="detail__btn-page">Открыть страницу товара ↗</a>
               <button class="detail__btn-close" @click="detailItem = null">Закрыть</button>
             </div>
           </div>
@@ -316,7 +403,7 @@
 
           <form class="modal__form" @submit.prevent="submitOrder">
             <input v-model="orderForm.name" type="text" placeholder="Ваше имя *" class="modal__input" maxlength="100" />
-            <input v-model="orderForm.phone" type="tel" placeholder="Телефон *" class="modal__input" maxlength="20" />
+            <input :value="orderForm.phone" @input="orderForm.phone = phoneMask($event.target.value)" type="tel" placeholder="+7 (___) ___-__-__" class="modal__input" maxlength="18" />
 
             <!-- Чекбокс установки — только для монтируемых категорий -->
             <label v-if="installableCategories.includes(orderItem.category)" class="modal__install">
@@ -353,11 +440,32 @@
 
 <script setup>
 import { ref, computed, reactive, watch, nextTick } from 'vue'
-import { categories, items, subcategories } from '~/data/catalog.js'
+import { phoneMask } from '~/composables/usePhoneMask.js'
+import { categories, items as staticItems, subcategories } from '~/data/catalog.js'
 
-useHead({ title: 'Каталог – ДСР' })
+const catIcons = {
+  all: '🗂️', fence3d: '🏗️', mesh: '🔗', piles: '🔩', septic: '💧',
+  welding: '⚡', cellar: '🏠', tanks: '🛢️', boiler: '🔥', pipe: '🔧',
+  industry: '⚙️', hardware: '🪛', docke: '🚢', garden: '🌿',
+  services: '👷', cable: '🔌', stainless: '✨', metalroll: '📐',
+  hatches: '🚪', plastic: '🧪', chimney: '🏭', proflist: '📦', kesson: '⛏️',
+}
+
+const { addItem, hasItem } = useCart()
+
+const items = reactive([...staticItems])
+const { data: dynamicItemsData, pending: catalogPending } = await useFetch('/data/catalog-items.json', { lazy: true, server: false, default: () => [] })
+watch(dynamicItemsData, (val) => { if (val?.length) items.push(...val) }, { immediate: true })
+
+useHead({ title: 'Каталог товаров и услуг — ДСР Владивосток' })
+useSeoMeta({
+  description: 'Каталог строительных материалов, трубопроводной арматуры, кабелей, металлопроката, септиков и оборудования. ООО ДСР — Владивосток. Более 2300 позиций.',
+  ogTitle: 'Каталог товаров — ДСР Владивосток',
+  ogDescription: 'Строительные материалы и оборудование. Более 2300 позиций. Доставка по Приморскому краю.',
+})
 
 const route = useRoute()
+const router = useRouter()
 const activeCategory = ref(route.query.cat ? String(route.query.cat) : 'all')
 const searchQuery = ref(route.query.search ? String(route.query.search) : '')
 const dropVisible = ref(false)
@@ -431,8 +539,9 @@ function closeDropdown() { dropVisible.value = false }
 
 watch(activeCategory, () => { activeSub.value = null })
 
-watch(searchQuery, () => {
-  if (searchQuery.value.trim()) {
+watch(searchQuery, (q) => {
+  router.replace({ query: { ...route.query, search: q || undefined } })
+  if (q.trim()) {
     dropVisible.value = true
     nextTick(() => {
       document.querySelector('.catalog__main')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -464,14 +573,63 @@ const currentSubs = computed(() =>
 
 const priceFilterActive = computed(() => priceMin.value !== null || priceMax.value !== null)
 
+const priceAbsMin = computed(() => {
+  const prices = items.filter(i => i.basePrice).map(i => i.basePrice)
+  return prices.length ? Math.floor(Math.min(...prices) / 100) * 100 : 0
+})
+const priceAbsMax = computed(() => {
+  const prices = items.filter(i => i.basePrice).map(i => i.basePrice)
+  return prices.length ? Math.ceil(Math.max(...prices) / 1000) * 1000 : 500000
+})
+const rangeStep = computed(() => {
+  const range = priceAbsMax.value - priceAbsMin.value
+  if (range <= 10000) return 100
+  if (range <= 100000) return 500
+  return 1000
+})
+
+const sliderMin = ref(0)
+const sliderMax = ref(500000)
+watch(priceAbsMin, v => { sliderMin.value = v }, { immediate: true })
+watch(priceAbsMax, v => { sliderMax.value = v }, { immediate: true })
+
+const rangeFillStyle = computed(() => {
+  const total = priceAbsMax.value - priceAbsMin.value
+  if (total === 0) return {}
+  const left = ((sliderMin.value - priceAbsMin.value) / total) * 100
+  const right = ((priceAbsMax.value - sliderMax.value) / total) * 100
+  return { left: `${left}%`, right: `${right}%` }
+})
+
+function onSliderMin() {
+  if (sliderMin.value >= sliderMax.value) sliderMin.value = sliderMax.value - rangeStep.value
+  priceMin.value = sliderMin.value <= priceAbsMin.value ? null : sliderMin.value
+}
+function onSliderMax() {
+  if (sliderMax.value <= sliderMin.value) sliderMax.value = sliderMin.value + rangeStep.value
+  priceMax.value = sliderMax.value >= priceAbsMax.value ? null : sliderMax.value
+}
+
+function formatPrice(v) {
+  if (v >= 1000) return (v / 1000).toFixed(v % 1000 === 0 ? 0 : 1) + ' тыс.'
+  return v.toLocaleString('ru-RU')
+}
+
 function setPricePreset(min, max) {
   priceMin.value = min
   priceMax.value = max
+  sliderMin.value = min ?? priceAbsMin.value
+  sliderMax.value = max ?? priceAbsMax.value
 }
 function resetPrice() {
   priceMin.value = null
   priceMax.value = null
+  sliderMin.value = priceAbsMin.value
+  sliderMax.value = priceAbsMax.value
 }
+
+const visibleCount = ref(24)
+const sortBy = ref('default')
 
 const filteredItems = computed(() => {
   let result = activeCategory.value === 'all'
@@ -497,6 +655,29 @@ const filteredItems = computed(() => {
     })
   }
   return result
+})
+
+const sortedItems = computed(() => {
+  const arr = [...filteredItems.value]
+  switch (sortBy.value) {
+    case 'name_asc':   return arr.sort((a, b) => a.title.localeCompare(b.title, 'ru'))
+    case 'name_desc':  return arr.sort((a, b) => b.title.localeCompare(a.title, 'ru'))
+    case 'price_asc':  return arr.sort((a, b) => (a.basePrice || 0) - (b.basePrice || 0))
+    case 'price_desc': return arr.sort((a, b) => (b.basePrice || 0) - (a.basePrice || 0))
+    default: return arr.sort((a, b) => {
+      const aHasPhoto = !!(a.photo || (a.photos && a.photos.length))
+      const bHasPhoto = !!(b.photo || (b.photos && b.photos.length))
+      if (aHasPhoto === bHasPhoto) return 0
+      return aHasPhoto ? -1 : 1
+    })
+  }
+})
+
+const paginatedItems = computed(() => sortedItems.value.slice(0, visibleCount.value))
+
+watch([activeCategory, searchQuery, activeSub, priceMin, priceMax], () => {
+  visibleCount.value = 24
+  sortBy.value = 'default'
 })
 
 function openDetail(item) {
@@ -583,15 +764,16 @@ async function submitOrder() {
   flex-shrink: 0;
 }
 
-.catalog__hero-price-inputs {
+.catalog__price-header {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 999px;
-  padding: 0.5rem 0.9rem;
-  backdrop-filter: blur(10px);
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.catalog__price-display {
+  font-size: 0.8rem;
+  color: #ccc;
+  font-weight: 500;
 }
 
 .catalog__hero-price-label {
@@ -599,40 +781,74 @@ async function submitOrder() {
   color: #e6b800;
   font-weight: 700;
   white-space: nowrap;
-  margin-right: 0.2rem;
 }
-
-.catalog__hero-price-input {
-  width: 72px;
-  background: none;
-  border: none;
-  border-bottom: 1px solid #333;
-  color: #fff;
-  font-size: 0.85rem;
-  font-family: inherit;
-  outline: none;
-  padding: 0.1rem 0.3rem;
-  -moz-appearance: textfield;
-}
-.catalog__hero-price-input::-webkit-outer-spin-button,
-.catalog__hero-price-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-.catalog__hero-price-input::placeholder { color: #444; }
-.catalog__hero-price-input:focus { border-bottom-color: #e6b800; }
-
-.catalog__hero-price-dash { color: #444; font-size: 0.85rem; }
 
 .catalog__hero-price-reset {
   background: none;
-  border: none;
+  border: 1px solid #2a2a2a;
+  border-radius: 999px;
   color: #555;
   cursor: pointer;
-  font-size: 0.8rem;
-  padding: 0;
-  line-height: 1;
-  transition: color 0.2s;
-  margin-left: 0.2rem;
+  font-size: 0.72rem;
+  font-family: inherit;
+  padding: 0.15rem 0.6rem;
+  transition: color 0.2s, border-color 0.2s;
+  margin-left: auto;
 }
-.catalog__hero-price-reset:hover { color: #e6b800; }
+.catalog__hero-price-reset:hover { color: #e6b800; border-color: rgba(230,184,0,0.4); }
+
+/* Двойной range-слайдер */
+.catalog__range-wrap {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+.catalog__range-track {
+  position: absolute;
+  left: 0; right: 0;
+  height: 4px;
+  background: #222;
+  border-radius: 4px;
+}
+.catalog__range-fill {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: #e6b800;
+  border-radius: 4px;
+}
+.catalog__range {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  pointer-events: none;
+  outline: none;
+}
+.catalog__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  background: #e6b800;
+  border-radius: 50%;
+  border: 2px solid #0a0a0a;
+  cursor: pointer;
+  pointer-events: all;
+  box-shadow: 0 0 0 3px rgba(230,184,0,0.2);
+  transition: box-shadow 0.2s;
+}
+.catalog__range::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(230,184,0,0.3); }
+.catalog__range::-moz-range-thumb {
+  width: 18px; height: 18px;
+  background: #e6b800;
+  border-radius: 50%;
+  border: 2px solid #0a0a0a;
+  cursor: pointer;
+  pointer-events: all;
+}
+.catalog__range--max { z-index: 2; }
 
 .catalog__hero-price-presets {
   display: flex;
@@ -833,14 +1049,21 @@ async function submitOrder() {
   overflow: hidden;
   background: #111;
   border: 1px solid #1e1e1e;
-  border-radius: 10px;
-  padding: 1.1rem 1.25rem;
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem 1rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  gap: 0.25rem;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
 }
+.catalog__cat-card-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+  transition: transform 0.3s;
+}
+.catalog__cat-card:hover .catalog__cat-card-icon { transform: scale(1.2) rotate(-5deg); }
 
 .catalog__cat-card::before {
   content: '';
@@ -856,8 +1079,9 @@ async function submitOrder() {
 }
 
 .catalog__cat-card:hover {
-  border-color: rgba(230,184,0,0.4);
-  box-shadow: 0 4px 20px rgba(230,184,0,0.06);
+  border-color: rgba(230,184,0,0.5);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(230,184,0,0.08);
+  transform: translateY(-3px);
 }
 
 .catalog__cat-card-label {
@@ -901,6 +1125,32 @@ async function submitOrder() {
   gap: 0.75rem;
 }
 .catalog__section-title { font-size: 1.3rem; font-weight: 700; color: #fff; }
+.catalog__section-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.catalog__sort-select {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #bbb;
+  font-size: 0.82rem;
+  font-family: inherit;
+  padding: 0.4rem 0.75rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%23666' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  padding-right: 2rem;
+}
+.catalog__sort-select:focus,
+.catalog__sort-select:hover { border-color: #e6b800; color: #fff; }
 .catalog__section-reset {
   font-size: 0.8rem;
   color: #e6b800;
@@ -924,9 +1174,13 @@ async function submitOrder() {
   border: 1px solid #1e1e1e;
   border-radius: 16px;
   overflow: hidden;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
 }
-.catalog-item:hover { border-color: rgba(230,184,0,0.3); box-shadow: 0 4px 20px rgba(230,184,0,0.05); }
+.catalog-item:hover {
+  border-color: rgba(230,184,0,0.45);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(230,184,0,0.07);
+  transform: translateY(-2px);
+}
 
 .catalog-item__img { min-height: 200px; background: #0d0d0d; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
 .catalog-item__img img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 6%; filter: drop-shadow(0 4px 20px rgba(230, 184, 0, 0.2)); transition: filter 0.3s; }
@@ -1035,6 +1289,8 @@ async function submitOrder() {
 .catalog-item__price { font-size: 1.15rem; font-weight: 700; color: #e6b800; }
 
 .catalog-item__btn {
+  position: relative;
+  overflow: hidden;
   padding: 0.6rem 1.3rem;
   background: #e6b800;
   color: #0a0a0a;
@@ -1044,10 +1300,43 @@ async function submitOrder() {
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
   white-space: nowrap;
 }
-.catalog-item__btn:hover { background: #f5c842; transform: translateY(-1px); }
+.catalog-item__btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.55s ease;
+}
+.catalog-item__btn:hover::after { left: 140%; }
+.catalog-item__btn:hover {
+  background: #f5c842;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(230,184,0,0.4);
+}
+
+.catalog-item__add {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: none;
+  color: #666;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.catalog-item__add:hover { background: rgba(230,184,0,0.12); color: #e6b800; border-color: rgba(230,184,0,0.4); }
+.catalog-item__add.added { background: rgba(74,222,128,0.1); color: #4ade80; border-color: rgba(74,222,128,0.3); }
 
 /* Подкатегории */
 /* ── Инфо-панель панелей ── */
@@ -1164,6 +1453,46 @@ async function submitOrder() {
   font-weight: 600;
 }
 
+/* Счётчик и пагинация */
+.catalog__count {
+  font-size: 0.8rem;
+  color: #444;
+  margin-bottom: 1rem;
+}
+
+.catalog__load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.catalog__load-more-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.85rem 2.5rem;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  color: #ccc;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.catalog__load-more-btn:hover {
+  border-color: rgba(230,184,0,0.5);
+  color: #e6b800;
+  background: rgba(230,184,0,0.05);
+}
+.catalog__load-more-total {
+  font-size: 0.72rem;
+  color: #555;
+  font-weight: 400;
+}
+
 /* Популярные */
 .catalog__popular { margin-bottom: 2.5rem; }
 .catalog__popular-title {
@@ -1177,7 +1506,7 @@ async function submitOrder() {
 
 /* Пусто */
 .catalog__empty { text-align: center; padding: 4rem 1rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-.catalog__empty-icon { font-size: 3rem; opacity: 0.4; }
+.catalog__empty-icon { opacity: 0.25; color: #e6b800; }
 .catalog__empty p { color: #666; }
 .catalog__empty strong { color: #e6b800; }
 .catalog__empty-btn { padding: 0.6rem 1.5rem; border: 1px solid #333; border-radius: 999px; background: none; color: #888; font-family: inherit; font-size: 0.875rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
@@ -1361,6 +1690,22 @@ async function submitOrder() {
 
 .detail__btn { flex: 1; min-width: 160px; padding: 0.85rem 1.5rem; font-size: 1rem; }
 
+.detail__btn-page {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.85rem 1.1rem;
+  background: transparent;
+  border: 1px solid rgba(230,184,0,0.3);
+  color: #e6b800;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+.detail__btn-page:hover { background: rgba(230,184,0,0.1); border-color: rgba(230,184,0,0.6); }
+
 .detail__btn-close {
   flex: 0 0 auto;
   padding: 0.85rem 1.25rem;
@@ -1390,4 +1735,40 @@ async function submitOrder() {
 .footer__contacts a { color: #888; text-decoration: none; transition: color 0.2s; }
 .footer__contacts a:hover { color: #e6b800; }
 .footer__copy { color: #333; font-size: 0.8rem; }
+
+/* Skeleton */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.catalog-skeleton {
+  background: #111;
+  border: 1px solid #1a1a1a;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.catalog-skeleton__img {
+  height: 180px;
+  background: linear-gradient(90deg, #161616 25%, #1e1e1e 50%, #161616 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+.catalog-skeleton__body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.catalog-skeleton__line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #161616 25%, #1e1e1e 50%, #161616 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+.catalog-skeleton__line--sm  { height: 10px; width: 45%; }
+.catalog-skeleton__line--lg  { height: 14px; width: 85%; }
+.catalog-skeleton__line--md  { height: 10px; width: 65%; }
+.catalog-skeleton__footer    { height: 32px; border-radius: 8px; margin-top: 0.4rem; background: linear-gradient(90deg, #161616 25%, #1e1e1e 50%, #161616 75%); background-size: 800px 100%; animation: shimmer 1.4s infinite linear; }
 </style>

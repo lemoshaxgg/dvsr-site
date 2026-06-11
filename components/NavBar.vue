@@ -8,8 +8,8 @@
       <!-- Десктоп меню -->
       <nav class="navbar__nav">
         <a href="/about" class="navbar__link navbar__link--pill">О компании</a>
-        <a href="/#services" class="navbar__link navbar__link--pill">Услуги</a>
-        <a href="/#map" class="navbar__link navbar__link--pill">Контакты</a>
+        <a href="/promotions" class="navbar__link navbar__link--pill navbar__link--promo">Акции</a>
+        <a href="/blog" class="navbar__link navbar__link--pill">Блог</a>
 
         <!-- Каталог с дропдауном -->
         <div class="navbar__dropdown-wrap" @mouseenter="dropOpen = true" @mouseleave="dropOpen = false">
@@ -34,6 +34,14 @@
           </transition>
         </div>
 
+        <!-- Иконка корзины -->
+        <button class="navbar__cart" @click="openDrawer" :class="{ 'has-items': cartCount > 0 }" aria-label="Список запросов">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/>
+          </svg>
+          <span v-if="cartCount > 0" class="navbar__cart-badge">{{ cartCount }}</span>
+        </button>
+
         <a href="/#contact" class="navbar__link navbar__link--cta">Связаться</a>
       </nav>
 
@@ -55,13 +63,15 @@
 
           <!-- Каталог с аккордеоном -->
           <div class="navbar__mobile-group">
-            <button class="navbar__mobile-group-toggle" @click="catalogOpen = !catalogOpen">
-              <span class="navbar__mobile-group-label">Каталог</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24"
-                :style="{ transform: catalogOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"/>
-              </svg>
-            </button>
+            <div class="navbar__mobile-group-toggle">
+              <a href="/catalog" class="navbar__mobile-group-label" @click="menuOpen = false">Каталог</a>
+              <button class="navbar__mobile-group-arrow" @click="catalogOpen = !catalogOpen" aria-label="Раскрыть категории">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24"
+                  :style="{ transform: catalogOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
             <div v-if="catalogOpen" class="navbar__mobile-cats">
               <a
                 v-for="cat in categories"
@@ -73,7 +83,13 @@
             </div>
           </div>
 
-          <a href="/#map" class="navbar__mobile-link" @click="menuOpen = false">Контакты</a>
+          <a href="/#map"       class="navbar__mobile-link" @click="menuOpen = false">Контакты</a>
+          <a href="/promotions" class="navbar__mobile-link navbar__mobile-link--promo" @click="menuOpen = false">Акции</a>
+          <a href="/blog"       class="navbar__mobile-link" @click="menuOpen = false">Блог</a>
+          <button v-if="cartCount > 0" class="navbar__mobile-cart" @click="menuOpen = false; openDrawer()">
+            Список запросов
+            <span class="navbar__mobile-cart-badge">{{ cartCount }}</span>
+          </button>
         </div>
 
         <!-- Кнопка "Связаться" всегда видна внизу -->
@@ -88,10 +104,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const menuOpen   = ref(false)
-const scrolled   = ref(false)
-const dropOpen   = ref(false)
+const menuOpen    = ref(false)
+const scrolled    = ref(false)
+const dropOpen    = ref(false)
 const catalogOpen = ref(false)
+
+const { count: cartCount, drawerOpen } = useCart()
+function openDrawer() { drawerOpen.value = true }
 
 function onScroll() {
   scrolled.value = window.scrollY > 40
@@ -197,6 +216,45 @@ const categories = [
   opacity: 0.7;
 }
 .navbar__drop-arrow.rotated { transform: rotate(180deg); }
+
+.navbar__link--promo { color: #ff9f43; border-color: rgba(255,159,67,0.25); background: rgba(255,159,67,0.07); }
+.navbar__link--promo:hover { color: #ffcc70; background: rgba(255,159,67,0.15); border-color: rgba(255,159,67,0.4); }
+
+.navbar__cart {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #777;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.navbar__cart:hover, .navbar__cart.has-items {
+  color: #e6b800;
+  background: rgba(230,184,0,0.1);
+  border-color: rgba(230,184,0,0.35);
+}
+.navbar__cart-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #e6b800;
+  color: #0a0a0a;
+  font-size: 0.65rem;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
 
 /* Телефон */
 .navbar__link--phone {
@@ -353,20 +411,30 @@ const categories = [
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  background: none;
-  border: none;
   padding: 0.85rem 0;
-  cursor: pointer;
-  font-family: inherit;
 }
 
 .navbar__mobile-group-label {
+  flex: 1;
   font-size: 1rem;
   font-weight: 500;
   color: #c0c0c0;
+  text-decoration: none;
+  transition: color 0.2s;
 }
+.navbar__mobile-group-label:hover { color: #e6b800; }
 
-.navbar__mobile-group-toggle svg { color: #555; }
+.navbar__mobile-group-arrow {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+.navbar__mobile-group-arrow:hover { color: #e6b800; }
 
 .navbar__mobile-cats {
   padding-bottom: 0.5rem;
@@ -385,6 +453,34 @@ const categories = [
   transition: background 0.15s, color 0.15s;
 }
 .navbar__mobile-sub:hover { background: rgba(230,184,0,0.08); color: #e6b800; }
+
+.navbar__mobile-link--promo { color: #ff9f43; }
+.navbar__mobile-link--promo:hover { color: #ffcc70; }
+
+.navbar__mobile-cart {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #1a1a1a;
+  color: #e6b800;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.85rem 0;
+  cursor: pointer;
+  text-align: left;
+}
+.navbar__mobile-cart-badge {
+  background: #e6b800;
+  color: #0a0a0a;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
 
 /* Кнопка связаться — всегда видна */
 .navbar__mobile-cta {

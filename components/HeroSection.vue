@@ -1,5 +1,10 @@
 <template>
   <section class="hero">
+    <!-- Анимированные orbs -->
+    <div class="hero__orb hero__orb--1"></div>
+    <div class="hero__orb hero__orb--2"></div>
+    <div class="hero__orb hero__orb--3"></div>
+
     <canvas ref="canvas" class="hero__canvas"></canvas>
 
     <div class="hero__content">
@@ -9,10 +14,12 @@
 
       <h1 class="hero__title hero__anim" style="animation-delay:0.25s">
         Дальневосточные<br />
-        <span class="hero__title-accent">Системы Развития</span>
+        <span class="text-shimmer">Системы Развития</span>
       </h1>
 
-      <p class="hero__subtitle hero__anim" style="animation-delay:0.4s">Строительство. Снабжение. Проектирование.</p>
+      <p class="hero__subtitle hero__anim" style="animation-delay:0.4s">
+        Строительство. Снабжение. Проектирование.
+      </p>
 
       <!-- Поиск -->
       <div class="hero__search-wrap hero__anim" style="animation-delay:0.55s" v-click-outside="closeSuggestions">
@@ -30,10 +37,9 @@
             @focus="showSuggestions = true"
           />
           <button v-if="query" type="button" class="hero__search-clear" @click="query = ''">✕</button>
-          <button type="submit" class="hero__search-btn">Найти</button>
+          <button type="submit" class="hero__search-btn btn-shimmer">Найти</button>
         </form>
 
-        <!-- Подсказки -->
         <transition name="suggestions">
           <div v-if="showSuggestions && suggestions.length > 0" class="hero__suggestions">
             <a
@@ -56,7 +62,25 @@
         </transition>
       </div>
 
-      <a href="#about" class="hero__arrow hero__anim" style="animation-delay:0.7s" aria-label="Листать вниз">
+      <!-- Быстрые факты -->
+      <div class="hero__stats hero__anim" style="animation-delay:0.7s">
+        <div class="hero__stat-item">
+          <span class="hero__stat-num">2300+</span>
+          <span class="hero__stat-label">товаров</span>
+        </div>
+        <div class="hero__stat-sep"></div>
+        <div class="hero__stat-item">
+          <span class="hero__stat-num">23</span>
+          <span class="hero__stat-label">категории</span>
+        </div>
+        <div class="hero__stat-sep"></div>
+        <div class="hero__stat-item">
+          <span class="hero__stat-num">10+</span>
+          <span class="hero__stat-label">лет на рынке</span>
+        </div>
+      </div>
+
+      <a href="#about" class="hero__arrow hero__anim" style="animation-delay:0.85s" aria-label="Листать вниз">
         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24">
           <path stroke="#e6b800" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M12 5v14M5 12l7 7 7-7" />
@@ -93,7 +117,6 @@ function closeSuggestions() {
   showSuggestions.value = false
 }
 
-// Директива v-click-outside
 const vClickOutside = {
   mounted(el, binding) {
     el._clickOutside = (e) => { if (!el.contains(e.target)) binding.value() }
@@ -106,6 +129,7 @@ const vClickOutside = {
 
 const canvas = ref(null)
 let animFrame = null
+const mouse = { x: -9999, y: -9999 }
 
 onMounted(() => {
   const c = canvas.value
@@ -119,22 +143,29 @@ onMounted(() => {
   resize()
   window.addEventListener('resize', resize)
 
-  const COUNT = 80
+  const onMouseMove = (e) => {
+    mouse.x = e.clientX
+    mouse.y = e.clientY
+  }
+  window.addEventListener('mousemove', onMouseMove)
+
+  const COUNT = 110
   const particles = Array.from({ length: COUNT }, () => ({
-    x: Math.random() * c.width,
-    y: Math.random() * c.height,
-    r: Math.random() * 1.5 + 0.4,
-    dx: (Math.random() - 0.5) * 0.4,
-    dy: (Math.random() - 0.5) * 0.4,
-    alpha: Math.random() * 0.5 + 0.15,
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    r: Math.random() * 1.8 + 0.3,
+    dx: (Math.random() - 0.5) * 0.5,
+    dy: (Math.random() - 0.5) * 0.5,
+    alpha: Math.random() * 0.55 + 0.1,
+    blue: Math.random() > 0.8,
   }))
 
-  const CONNECT_DIST = 130
+  const CONNECT_DIST = 140
+  const MOUSE_REPEL = 100
 
   function draw() {
     ctx.clearRect(0, 0, c.width, c.height)
 
-    // Соединяем близкие частицы линиями
     for (let i = 0; i < COUNT; i++) {
       for (let j = i + 1; j < COUNT; j++) {
         const dx = particles[i].x - particles[j].x
@@ -142,7 +173,7 @@ onMounted(() => {
         const dist = Math.sqrt(dx * dx + dy * dy)
         if (dist < CONNECT_DIST) {
           ctx.beginPath()
-          ctx.strokeStyle = `rgba(230,184,0,${0.12 * (1 - dist / CONNECT_DIST)})`
+          ctx.strokeStyle = `rgba(230,184,0,${0.15 * (1 - dist / CONNECT_DIST)})`
           ctx.lineWidth = 0.6
           ctx.moveTo(particles[i].x, particles[i].y)
           ctx.lineTo(particles[j].x, particles[j].y)
@@ -151,16 +182,27 @@ onMounted(() => {
       }
     }
 
-    // Рисуем точки
     particles.forEach((p) => {
+      const mdx = p.x - mouse.x
+      const mdy = p.y - mouse.y
+      const mdist = Math.sqrt(mdx * mdx + mdy * mdy)
+      if (mdist < MOUSE_REPEL && mdist > 0) {
+        const force = (MOUSE_REPEL - mdist) / MOUSE_REPEL * 0.7
+        p.dx += (mdx / mdist) * force
+        p.dy += (mdy / mdist) * force
+      }
+      p.dx *= 0.99
+      p.dy *= 0.99
+
       ctx.beginPath()
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(230,184,0,${p.alpha})`
+      ctx.fillStyle = p.blue
+        ? `rgba(120,160,255,${p.alpha * 0.7})`
+        : `rgba(230,184,0,${p.alpha})`
       ctx.fill()
 
       p.x += p.dx
       p.y += p.dy
-
       if (p.x < 0 || p.x > c.width)  p.dx *= -1
       if (p.y < 0 || p.y > c.height) p.dy *= -1
     })
@@ -173,6 +215,7 @@ onMounted(() => {
   onUnmounted(() => {
     cancelAnimationFrame(animFrame)
     window.removeEventListener('resize', resize)
+    window.removeEventListener('mousemove', onMouseMove)
   })
 })
 </script>
@@ -183,9 +226,54 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0a 70%);
+  background:
+    radial-gradient(ellipse at 20% 0%, #1a1a2e 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 100%, #0d1a0d 0%, transparent 50%),
+    #0a0a0a;
   position: relative;
   overflow: hidden;
+}
+
+/* ── Орбы ── */
+.hero__orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(90px);
+}
+.hero__orb--1 {
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(230,184,0,0.10), transparent 70%);
+  top: -150px; left: -150px;
+  animation: orb1 14s ease-in-out infinite;
+}
+.hero__orb--2 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(80,60,200,0.09), transparent 70%);
+  bottom: -100px; right: -100px;
+  animation: orb2 18s ease-in-out infinite;
+}
+.hero__orb--3 {
+  width: 450px; height: 450px;
+  background: radial-gradient(circle, rgba(0,200,120,0.06), transparent 70%);
+  top: 45%; left: 50%;
+  transform: translate(-50%, -50%);
+  animation: orb3 22s ease-in-out infinite;
+}
+@keyframes orb1 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33%       { transform: translate(80px,50px) scale(1.12); }
+  66%       { transform: translate(-30px,100px) scale(0.9); }
+}
+@keyframes orb2 {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  40%       { transform: translate(-90px,-60px) scale(1.18); }
+  70%       { transform: translate(50px,-80px) scale(0.85); }
+}
+@keyframes orb3 {
+  0%, 100% { transform: translate(-50%,-50%) scale(1); }
+  30%       { transform: translate(-50%,-50%) scale(1.25) rotate(20deg); }
+  60%       { transform: translate(-50%,-50%) scale(0.78) rotate(-15deg); }
 }
 
 .hero__canvas {
@@ -209,205 +297,156 @@ onMounted(() => {
   max-width: 700px;
 }
 
-.hero__logo-placeholder {
-  width: 140px;
-  height: 140px;
-  border: 2px dashed #e6b800;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #e6b800;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  opacity: 0.6;
-}
-
-.hero__logo-img {
-  width: 140px;
-  height: 140px;
-  object-fit: contain;
-}
-
 .hero__title {
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(2rem, 5vw, 3.6rem);
   font-weight: 800;
   line-height: 1.2;
-  color: #ffffff;
+  color: #fff;
   letter-spacing: -0.02em;
 }
 
-.hero__title-accent {
-  color: #e6b800;
-}
-
 .hero__subtitle {
-  font-size: 1.1rem;
-  color: #a0a0a0;
+  font-size: 1rem;
+  color: #777;
   max-width: 480px;
-  line-height: 1.6;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
 }
 
-/* Поиск */
+/* ── Поиск ── */
 .hero__search-wrap {
   position: relative;
   width: 100%;
-  max-width: 520px;
+  max-width: 540px;
 }
-
 .hero__search {
-  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 999px;
-  backdrop-filter: blur(12px);
-  transition: border-color 0.2s, background 0.2s;
+  backdrop-filter: blur(16px);
+  transition: border-color 0.25s, box-shadow 0.25s;
   overflow: hidden;
 }
-
 .hero__search:focus-within {
-  border-color: rgba(230,184,0,0.5);
-  background: rgba(255,255,255,0.09);
+  border-color: rgba(230,184,0,0.55);
+  box-shadow: 0 0 0 3px rgba(230,184,0,0.08), 0 8px 32px rgba(0,0,0,0.3);
+}
+.hero__search-icon { position: absolute; left: 1.1rem; color: #555; pointer-events: none; }
+.hero__search-input {
+  flex: 1;
+  padding: 0.9rem 1rem 0.9rem 2.85rem;
+  background: none; border: none;
+  color: #fff; font-size: 0.95rem; font-family: inherit; outline: none; min-width: 0;
+}
+.hero__search-input::placeholder { color: #444; }
+.hero__search-clear {
+  background: none; border: none; color: #555; cursor: pointer; padding: 0.5rem; font-size: 0.8rem;
+  transition: color 0.2s;
+}
+.hero__search-clear:hover { color: #fff; }
+.hero__search-btn {
+  margin: 0.3rem;
+  padding: 0.65rem 1.4rem;
+  background: #e6b800; color: #0a0a0a;
+  font-size: 0.875rem; font-weight: 700; font-family: inherit;
+  border: none; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+.hero__search-btn:hover {
+  background: #f5c842;
+  transform: scale(1.04);
+  box-shadow: 0 4px 16px rgba(230,184,0,0.4);
 }
 
-/* Подсказки */
+/* ── Подсказки ── */
 .hero__suggestions {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  background: rgba(16,16,16,0.97);
-  backdrop-filter: blur(20px);
+  top: calc(100% + 8px); left: 0; right: 0;
+  background: rgba(14,14,14,0.98);
+  backdrop-filter: blur(24px);
   border: 1px solid rgba(230,184,0,0.2);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
   z-index: 50;
 }
-
 .hero__suggestion-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  text-decoration: none;
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.8rem 1.1rem; text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
   transition: background 0.15s;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
 }
-.hero__suggestion-item:last-of-type { border-bottom: none; }
-.hero__suggestion-item:hover { background: rgba(230,184,0,0.08); }
-
+.hero__suggestion-item:hover { background: rgba(230,184,0,0.07); }
 .hero__suggestion-icon { font-size: 1.2rem; flex-shrink: 0; }
-
-.hero__suggestion-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  flex: 1;
-  min-width: 0;
-}
-.hero__suggestion-title { font-size: 0.875rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hero__suggestion-info { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
+.hero__suggestion-title { font-size: 0.875rem; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hero__suggestion-cat { font-size: 0.72rem; color: #555; }
-
 .hero__suggestion-price { font-size: 0.8rem; font-weight: 700; color: #e6b800; white-space: nowrap; flex-shrink: 0; }
-
 .hero__suggestion-all {
-  display: block;
-  text-align: center;
-  padding: 0.65rem;
-  font-size: 0.8rem;
-  color: #e6b800;
-  text-decoration: none;
-  background: rgba(230,184,0,0.05);
-  font-weight: 600;
-  transition: background 0.15s;
+  display: block; text-align: center; padding: 0.7rem;
+  font-size: 0.8rem; color: #e6b800; text-decoration: none;
+  background: rgba(230,184,0,0.04); font-weight: 600; transition: background 0.15s;
 }
-.hero__suggestion-all:hover { background: rgba(230,184,0,0.12); }
+.hero__suggestion-all:hover { background: rgba(230,184,0,0.1); }
 
 .suggestions-enter-active { transition: opacity 0.2s ease, transform 0.2s ease; }
 .suggestions-leave-active { transition: opacity 0.15s ease; }
 .suggestions-enter-from { opacity: 0; transform: translateY(-6px); }
 .suggestions-leave-to { opacity: 0; }
 
-.hero__search-icon {
-  position: absolute;
-  left: 1.1rem;
-  color: #666;
-  pointer-events: none;
-  flex-shrink: 0;
-}
-
-.hero__search-input {
-  flex: 1;
-  padding: 0.85rem 1rem 0.85rem 2.75rem;
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 0.95rem;
-  font-family: inherit;
-  outline: none;
-  min-width: 0;
-}
-
-.hero__search-input::placeholder { color: #555; }
-
-.hero__search-btn {
-  margin: 0.3rem;
-  padding: 0.6rem 1.3rem;
-  background: #e6b800;
-  color: #0a0a0a;
-  font-size: 0.875rem;
-  font-weight: 700;
-  font-family: inherit;
-  border: none;
+/* ── Статы ── */
+.hero__stats {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
   border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.2s;
-  flex-shrink: 0;
+  padding: 0.6rem 0;
+  backdrop-filter: blur(12px);
 }
-
-.hero__search-btn:hover { background: #f5c842; }
-
-@media (max-width: 480px) {
-  .hero__search { max-width: 100%; }
-  .hero__search-btn { padding: 0.55rem 1rem; font-size: 0.8rem; }
+.hero__stat-item {
+  display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
+  padding: 0 1.5rem;
 }
+.hero__stat-num {
+  font-size: 1.1rem; font-weight: 800; color: #e6b800; line-height: 1;
+}
+.hero__stat-label {
+  font-size: 0.63rem; color: #555; text-transform: uppercase; letter-spacing: 0.08em;
+}
+.hero__stat-sep { width: 1px; height: 28px; background: rgba(255,255,255,0.07); }
 
+/* ── Стрелка ── */
 .hero__arrow {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   display: inline-flex;
-  animation: bounce 2s infinite;
-  opacity: 0.8;
+  opacity: 0.65;
   transition: opacity 0.2s;
+  animation: bounce 2.2s ease-in-out infinite;
 }
-
 .hero__arrow:hover { opacity: 1; }
-
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(10px); }
+  50%       { transform: translateY(12px); }
 }
 
+/* ── Появление ── */
 .hero__anim {
   opacity: 0;
-  transform: translateY(24px);
-  animation: heroFadeUp 0.7s ease forwards;
+  transform: translateY(28px);
+  animation: heroFadeUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
 @keyframes heroFadeUp {
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 480px) {
-  .hero__logo-placeholder,
-  .hero__logo-img { width: 100px; height: 100px; }
-  .hero__subtitle { font-size: 0.95rem; padding: 0 0.5rem; }
-  .hero__arrow    { margin-top: 1rem; }
+@media (max-width: 580px) {
+  .hero__stat-item { padding: 0 0.85rem; }
+  .hero__stat-num { font-size: 0.95rem; }
+  .hero__search-btn { padding: 0.55rem 1rem; font-size: 0.8rem; }
 }
 </style>

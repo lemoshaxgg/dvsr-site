@@ -1,5 +1,10 @@
 export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
+  runtimeConfig: {
+    public: {
+      metrikaId: process.env.NUXT_PUBLIC_METRIKA_ID || '',
+    },
+  },
   css: ['~/assets/css/main.css'],
   app: {
     head: {
