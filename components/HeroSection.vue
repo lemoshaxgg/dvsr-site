@@ -319,6 +319,7 @@ onMounted(() => {
   position: relative;
   width: 100%;
   max-width: 540px;
+  z-index: 20;
 }
 .hero__search {
   display: flex;

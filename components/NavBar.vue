@@ -179,7 +179,7 @@ const categories = [
   font-size: 0.875rem;
   font-weight: 500;
   color: #c0c0c0;
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  transition: none;
 }
 
 .navbar__link--pill {
@@ -191,6 +191,7 @@ const categories = [
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
+  transition: none;
 }
 
 .navbar__link--pill:hover {
@@ -232,7 +233,7 @@ const categories = [
   background: rgba(255,255,255,0.04);
   color: #777;
   cursor: pointer;
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  transition: none;
 }
 .navbar__cart:hover, .navbar__cart.has-items {
   color: #e6b800;
@@ -286,6 +287,7 @@ const categories = [
   color: #e6b800;
   font-weight: 600;
   margin-left: 0.4rem;
+  transition: background 0.12s, color 0.12s;
 }
 
 .navbar__link--cta:hover {
@@ -336,15 +338,15 @@ const categories = [
 
 /* Анимация дропдауна */
 .dropdown-enter-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.1s ease, transform 0.1s ease;
 }
 .dropdown-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity 0.07s ease, transform 0.07s ease;
 }
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(-6px);
+  transform: translateX(-50%) translateY(-4px);
 }
 
 /* Бургер */
