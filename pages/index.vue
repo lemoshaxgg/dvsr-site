@@ -1,6 +1,6 @@
 <template>
   <main>
-    <NavBar />
+
     <HeroSection />
     <AboutSection />
     <ServicesSection />

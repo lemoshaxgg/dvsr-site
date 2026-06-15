@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBar />
+
 
     <main class="blog-page">
       <div class="blog-page__hero">

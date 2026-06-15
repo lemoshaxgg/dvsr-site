@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBar />
+
 
     <main v-if="post" class="article">
       <div class="article__hero" :style="post.image ? `background-image: url(${post.image})` : ''">

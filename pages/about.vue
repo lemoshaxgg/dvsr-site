@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBar />
+
 
     <main class="about-page">
 

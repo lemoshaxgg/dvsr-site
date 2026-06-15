@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBar />
+
 
     <main class="privacy">
       <div class="privacy__container">

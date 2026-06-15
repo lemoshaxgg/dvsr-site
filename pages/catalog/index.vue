@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBar />
+
 
     <main class="catalog">
       <!-- Шапка -->
@@ -154,10 +154,14 @@
                 class="catalog__cat-card"
                 @click="activeCategory = cat.id"
               >
-                <span class="catalog__cat-card-icon">{{ catIcons[cat.id] || '📦' }}</span>
+                <div class="catalog__cat-card-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24">
+                    <path :d="catIconPaths[cat.id] || 'M3 3h18v18H3z'" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+                  </svg>
+                </div>
                 <span class="catalog__cat-card-label">{{ cat.label }}</span>
                 <span class="catalog__cat-card-count">{{ countByCategory(cat.id) }} позиций</span>
-                <svg class="catalog__cat-card-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
+                <svg class="catalog__cat-card-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
                   <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
               </div>
@@ -169,7 +173,7 @@
             <div v-if="activeCategory === 'all' && !searchQuery" class="catalog__popular">
               <h3 class="catalog__popular-title">Популярные позиции</h3>
               <div class="catalog__list">
-                <div v-for="item in popularItems" :key="item.id" class="catalog-item" @click="openDetail(item)">
+                <div v-for="item in popularItems" :key="item.id" class="catalog-item" @click="navigateTo('/catalog/' + item.id)">
                   <div class="catalog-item__img">
                     <template v-if="item.photos && item.photos.length > 1">
                       <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" />
@@ -194,9 +198,15 @@
                       <div class="catalog-item__price-block">
                         <span class="catalog-item__price catalog-item__price--ask">Уточнить цену</span>
                       </div>
-                      <button class="catalog-item__btn" @click.stop="openOrder(item)">Оставить заявку</button>
-                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" @click.stop="addItem(item)" :title="hasItem(item.id) ? 'В списке' : 'Добавить в список'">
-                    {{ hasItem(item.id) ? '✓' : '+' }}
+                      <button class="catalog-item__btn" @click.stop="openOrder(item)">Заявка</button>
+                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" @click.stop="addItem(item)">
+                    <svg v-if="!hasItem(item.id)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    <span class="catalog-item__add-tip">{{ hasItem(item.id) ? 'В списке' : 'В список' }}</span>
                   </button>
                     </div>
                   </div>
@@ -207,19 +217,44 @@
 
           <!-- Заголовок раздела -->
           <div class="catalog__section-header" v-if="activeCategory !== 'all' || searchQuery">
-            <h2 class="catalog__section-title">
-              {{ searchQuery ? `Результаты: «${searchQuery}»` : currentCategory?.label }}
-            </h2>
+            <div class="catalog__section-left">
+              <h2 class="catalog__section-title">
+                {{ searchQuery ? `«${searchQuery}»` : currentCategory?.label }}
+              </h2>
+              <span class="catalog__section-badge">{{ filteredItems.length }}</span>
+            </div>
             <div class="catalog__section-right">
-              <select v-model="sortBy" class="catalog__sort-select">
-                <option value="default">По умолчанию</option>
-                <option value="name_asc">Название А–Я</option>
-                <option value="name_desc">Название Я–А</option>
-                <option value="price_asc">Цена: дешевле</option>
-                <option value="price_desc">Цена: дороже</option>
-              </select>
+              <!-- Пиллы сортировки -->
+              <div class="catalog__sort-pills">
+                <button
+                  v-for="s in sortOptions"
+                  :key="s.value"
+                  class="catalog__sort-pill"
+                  :class="{ active: sortBy === s.value }"
+                  @click="sortBy = s.value"
+                >{{ s.label }}</button>
+              </div>
+              <!-- Переключатель вид -->
+              <div class="catalog__view-toggle">
+                <button class="catalog__view-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'" title="Список">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                  </svg>
+                </button>
+                <button class="catalog__view-btn" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'" title="Сетка">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </button>
+              </div>
               <button class="catalog__section-reset" @click="activeCategory = 'all'; searchQuery = ''">
-                ← Все категории
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M19 12H5M12 5l-7 7 7 7"/>
+                </svg>
+                Все
               </button>
             </div>
           </div>
@@ -253,34 +288,71 @@
                 <div class="panels-info__section">
                   <div class="panels-info__section-title">Доступные цвета (RAL)</div>
                   <div class="panels-info__colors">
-                    <div class="panels-info__color" v-for="c in panelColors" :key="c.ral" :title="c.name + ' RAL ' + c.ral">
+                    <button
+                      v-for="c in panelColors" :key="c.ral"
+                      class="panels-info__color"
+                      :class="{ selected: selectedPanelColor?.ral === c.ral }"
+                      :title="c.name + ' RAL ' + c.ral"
+                      @click="selectPanelColor(c)">
                       <span class="panels-info__color-dot" :style="{ background: c.hex }"></span>
                       <span class="panels-info__color-name">{{ c.name }}</span>
                       <span class="panels-info__color-ral">{{ c.ral }}</span>
-                    </div>
+                    </button>
                   </div>
                 </div>
                 <div class="panels-info__sizes">
                   <div class="panels-info__section">
                     <div class="panels-info__section-title">Толщина 4 мм</div>
                     <div class="panels-info__size-list">
-                      <span v-for="s in sizes4mm" :key="s" class="panels-info__size">{{ s }}</span>
+                      <button v-for="s in sizes4mm" :key="s"
+                        class="panels-info__size"
+                        :class="{ selected: selectedPanelSize === s + '|4mm' }"
+                        @click="selectPanelSize(s, '4mm')">{{ s }}</button>
                     </div>
                   </div>
                   <div class="panels-info__section">
                     <div class="panels-info__section-title">Толщина 5 мм</div>
                     <div class="panels-info__size-list">
-                      <span v-for="s in sizes5mm" :key="s" class="panels-info__size">{{ s }}</span>
+                      <button v-for="s in sizes5mm" :key="s"
+                        class="panels-info__size"
+                        :class="{ selected: selectedPanelSize === s + '|5mm' }"
+                        @click="selectPanelSize(s, '5mm')">{{ s }}</button>
                     </div>
                   </div>
                   <div class="panels-info__section">
                     <div class="panels-info__section-title">Столбы с фланцем</div>
                     <div class="panels-info__size-list">
-                      <span v-for="s in sizesPost" :key="s" class="panels-info__size">{{ s }}</span>
+                      <button v-for="s in sizesPost" :key="s"
+                        class="panels-info__size"
+                        :class="{ selected: selectedPanelSize === s + '|posts' }"
+                        @click="selectPanelSize(s, 'posts')">{{ s }}</button>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
+          </transition>
+
+          <!-- Активный фильтр панели -->
+          <transition name="fade">
+            <div v-if="selectedPanelSize || selectedPanelColor" class="panel-filter-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M7 10h10M10 16h4"/>
+              </svg>
+              <span v-if="selectedPanelSize">{{ selectedPanelSize.split('|')[0] }}
+                <template v-if="selectedPanelSize.endsWith('|4mm')">&nbsp;· 4 мм</template>
+                <template v-else-if="selectedPanelSize.endsWith('|5mm')">&nbsp;· 5 мм</template>
+                <template v-else>&nbsp;· Столб</template>
+              </span>
+              <span v-if="selectedPanelColor">
+                <span class="panel-filter-badge__dot" :style="{ background: selectedPanelColor.hex }"></span>
+                {{ selectedPanelColor.name }} {{ selectedPanelColor.ral }}
+              </span>
+              <button class="panel-filter-badge__clear" @click="clearPanelFilter">
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-width="2.5" d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
             </div>
           </transition>
 
@@ -310,15 +382,27 @@
           </div>
 
           <!-- Список услуг -->
-          <div v-if="filteredItems.length > 0" class="catalog__list">
-            <div v-for="item in paginatedItems" :key="item.id" class="catalog-item" @click="openDetail(item)">
+          <TransitionGroup
+            v-if="filteredItems.length > 0"
+            name="ci"
+            tag="div"
+            :class="['catalog__list', { 'catalog__list--grid': viewMode === 'grid' }]"
+          >
+            <div
+              v-for="(item, i) in paginatedItems"
+              :key="item.id"
+              class="catalog-item"
+              :class="{ 'catalog-item--grid': viewMode === 'grid' }"
+              :style="{ '--stagger': `${Math.min(i % 24, 10) * 45}ms` }"
+              @click="navigateTo('/catalog/' + item.id)"
+            >
               <div class="catalog-item__img">
                 <template v-if="item.photos && item.photos.length > 1">
                   <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" loading="lazy" />
                   <button class="ci-carousel__prev" @click.stop="prevPhoto(item.id, item.photos.length)">&#8249;</button>
                   <button class="ci-carousel__next" @click.stop="nextPhoto(item.id, item.photos.length)">&#8250;</button>
                   <div class="ci-carousel__dots">
-                    <span v-for="(_, i) in item.photos" :key="i" class="ci-carousel__dot" :class="{ active: i === getPhotoIdx(item.id) }" @click.stop="setPhotoIdx(item.id, i)"></span>
+                    <span v-for="(_, j) in item.photos" :key="j" class="ci-carousel__dot" :class="{ active: j === getPhotoIdx(item.id) }" @click.stop="setPhotoIdx(item.id, j)"></span>
                   </div>
                 </template>
                 <img v-else-if="item.photo || item.photos" :src="item.photo || item.photos[0]" :alt="item.title" loading="lazy" />
@@ -328,6 +412,8 @@
                     <span class="catalog-item__placeholder-text">Фото скоро</span>
                   </div>
                 </div>
+                <!-- Бейдж "В списке" -->
+                <div v-if="hasItem(item.id)" class="catalog-item__in-list-badge">В списке</div>
               </div>
               <div class="catalog-item__content">
                 <span class="catalog-item__category">{{ categoryMap[item.category] }}</span>
@@ -337,14 +423,20 @@
                   <div class="catalog-item__price-block">
                     <span class="catalog-item__price catalog-item__price--ask">Уточнить цену</span>
                   </div>
-                  <button class="catalog-item__btn" @click.stop="openOrder(item)">Оставить заявку</button>
-                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" @click.stop="addItem(item)" :title="hasItem(item.id) ? 'В списке' : 'Добавить в список'">
-                    {{ hasItem(item.id) ? '✓' : '+' }}
+                  <button class="catalog-item__btn" @click.stop="openOrder(item)">Заявка</button>
+                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" @click.stop="addItem(item)">
+                    <svg v-if="!hasItem(item.id)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 6L9 17l-5-5"/>
+                    </svg>
+                    <span class="catalog-item__add-tip">{{ hasItem(item.id) ? 'В списке' : 'В список' }}</span>
                   </button>
                 </div>
               </div>
             </div>
-          </div>
+          </TransitionGroup>
 
           <!-- Кнопка "Показать ещё" -->
           <div v-if="paginatedItems.length < filteredItems.length" class="catalog__load-more">
@@ -357,47 +449,15 @@
       </div>
     </main>
 
-    <!-- Детальный просмотр товара -->
-    <transition name="modal">
-      <div v-if="detailItem" class="modal-overlay" @click.self="detailItem = null">
-        <div class="modal modal--detail">
-          <button class="modal__close" @click="detailItem = null">✕</button>
-
-          <div class="detail__img-wrap">
-            <template v-if="detailItem.photos && detailItem.photos.length > 1">
-              <img :src="detailItem.photos[detailPhotoIdx]" :alt="detailItem.title" class="detail__img" />
-              <button class="ci-carousel__prev ci-carousel__prev--lg" @click="detailPhotoIdx = (detailPhotoIdx - 1 + detailItem.photos.length) % detailItem.photos.length">&#8249;</button>
-              <button class="ci-carousel__next ci-carousel__next--lg" @click="detailPhotoIdx = (detailPhotoIdx + 1) % detailItem.photos.length">&#8250;</button>
-              <div class="ci-carousel__dots ci-carousel__dots--lg">
-                <span v-for="(_, i) in detailItem.photos" :key="i" class="ci-carousel__dot" :class="{ active: i === detailPhotoIdx }" @click="detailPhotoIdx = i"></span>
-              </div>
-            </template>
-            <img v-else-if="detailItem.photo || detailItem.photos" :src="detailItem.photo || detailItem.photos[0]" :alt="detailItem.title" class="detail__img" />
-            <div v-else class="detail__img-empty">
-              <span>{{ detailItem.icon }}</span>
-            </div>
-          </div>
-
-          <div class="detail__info">
-            <span class="detail__category">{{ categoryMap[detailItem.category] }}</span>
-            <h2 class="detail__title">{{ detailItem.title }}</h2>
-            <p class="detail__desc">{{ detailItem.description }}</p>
-            <div class="detail__price detail__price--ask">Уточнить цену</div>
-            <div class="detail__actions">
-              <button class="catalog-item__btn detail__btn" @click="openOrder(detailItem); detailItem = null">Оставить заявку</button>
-              <a :href="`/catalog/${detailItem.id}`" class="detail__btn-page">Открыть страницу товара ↗</a>
-              <button class="detail__btn-close" @click="detailItem = null">Закрыть</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </transition>
-
     <!-- Модалка заявки -->
     <transition name="modal">
       <div v-if="orderItem" class="modal-overlay" @click.self="orderItem = null">
         <div class="modal">
-          <button class="modal__close" @click="orderItem = null">✕</button>
+          <button class="modal__close" @click="orderItem = null">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
           <h2 class="modal__title">{{ orderItem.title }}</h2>
           <p class="modal__price modal__price--ask">Уточнить цену</p>
 
@@ -443,13 +503,39 @@ import { ref, computed, reactive, watch, nextTick } from 'vue'
 import { phoneMask } from '~/composables/usePhoneMask.js'
 import { categories, items as staticItems, subcategories } from '~/data/catalog.js'
 
-const catIcons = {
-  all: '🗂️', fence3d: '🏗️', mesh: '🔗', piles: '🔩', septic: '💧',
-  welding: '⚡', cellar: '🏠', tanks: '🛢️', boiler: '🔥', pipe: '🔧',
-  industry: '⚙️', hardware: '🪛', docke: '🚢', garden: '🌿',
-  services: '👷', cable: '🔌', stainless: '✨', metalroll: '📐',
-  hatches: '🚪', plastic: '🧪', chimney: '🏭', proflist: '📦', kesson: '⛏️',
+const catIconPaths = {
+  fence3d:   'M3 21V9m3-4v16M9 21V5l3-4v20M15 21V5l3-4v16M21 21V9M3 13h18',
+  mesh:      'M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18',
+  piles:     'M7 22V4M12 22V2M17 22V4M2 22h20M5 8l7-4 7 4',
+  septic:    'M5 9a7 7 0 0114 0v7a2 2 0 01-2 2H7a2 2 0 01-2-2V9zm7-7v7m-3 11v2m6-2v2',
+  welding:   'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
+  cellar:    'M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V10.5zM9 21V12h6v9',
+  tanks:     'M8 3h8a2 2 0 012 2v14a2 2 0 01-2 2H8a2 2 0 01-2-2V5a2 2 0 012-2zM6 8h12M6 16h12M12 3v18',
+  boiler:    'M12 22a6 6 0 006-6c0-5-3-8-6-14-3 6-6 9-6 14a6 6 0 006 6zm0 0v-8',
+  pipe:      'M3 12h18M3 6h2a2 2 0 010 4H3M21 18h-2a2 2 0 010-4h2M7 6v12M17 6v12',
+  industry:  'M12 15a3 3 0 100-6 3 3 0 000 6zm0-13v2m0 16v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M2 12h2m16 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42',
+  hardware:  'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z',
+  docke:     'M12 2a3 3 0 100 6 3 3 0 000-6zm0 6v12M6 16a6 6 0 0012 0M3 16h3m12 0h3',
+  garden:    'M12 22V12M12 12C11 7 7 4 3 5c4 1 7 4 9 7M12 12c1-5 5-8 9-7-4 1-7 4-9 7',
+  services:  'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm7 1l2 2 4-4',
+  cable:     'M18 7l-1-4H7L6 7M12 7v8M5 10h14M9 18l-2 3M15 18l2 3M8 15h8',
+  stainless: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
+  metalroll: 'M12 12m-9 0a9 9 0 1018 0 9 9 0 01-18 0M12 3v18M3 12h18',
+  hatches:   'M3 3h18v18H3zM3 3l18 18M21 3L3 21',
+  plastic:   'M8 2h8l2 8H6L8 2zm-4 8h16v11a1 1 0 01-1 1H5a1 1 0 01-1-1V10z',
+  chimney:   'M9 22V6l-4-4h14L15 6v16M6 22h12M12 6v16M8 10h8M8 15h8',
+  proflist:  'M3 5h18M3 10h18M3 15h18M3 20h18M8 2v3M16 2v3',
+  kesson:    'M12 2a9 9 0 100 18A9 9 0 0012 2zm0 0v18M3 12h18M7 6l10 12M17 6L7 18',
 }
+
+const viewMode = ref('list')
+const sortOptions = [
+  { value: 'default',   label: 'По умолч.' },
+  { value: 'name_asc',  label: 'А–Я' },
+  { value: 'name_desc', label: 'Я–А' },
+  { value: 'price_asc', label: 'Цена ↑' },
+  { value: 'price_desc',label: 'Цена ↓' },
+]
 
 const { addItem, hasItem } = useCart()
 
@@ -473,14 +559,33 @@ const activeSub = ref(null)
 const priceMin = ref(null)
 const priceMax = ref(null)
 const orderItem = ref(null)
-const detailItem = ref(null)
 const orderLoading = ref(false)
 const orderSuccess = ref(false)
 const orderForm = reactive({ name: '', phone: '', message: '', needInstall: false })
 
 const photoIndexes = reactive({})
-const detailPhotoIdx = ref(0)
 const panelsInfoOpen = ref(true)
+const selectedPanelSize  = ref(null)  // "1530×2510 мм|4mm" или null
+const selectedPanelColor = ref(null)  // { name, ral, hex } или null
+
+function selectPanelSize(sizeStr, group) {
+  const key = sizeStr + '|' + group
+  selectedPanelSize.value  = selectedPanelSize.value === key ? null : key
+  selectedPanelColor.value = null
+  if (selectedPanelSize.value) nextTick(scrollToList)
+}
+function selectPanelColor(color) {
+  selectedPanelColor.value = selectedPanelColor.value?.ral === color.ral ? null : color
+  selectedPanelSize.value  = null
+  if (selectedPanelColor.value) nextTick(scrollToList)
+}
+function clearPanelFilter() {
+  selectedPanelSize.value  = null
+  selectedPanelColor.value = null
+}
+function scrollToList() {
+  document.querySelector('.catalog__main')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 const panelColors = [
   { name: 'Бежевый',      ral: 'RAL 1014', hex: '#D2B48C' },
@@ -537,7 +642,11 @@ function selectSuggestion(item) {
 
 function closeDropdown() { dropVisible.value = false }
 
-watch(activeCategory, () => { activeSub.value = null })
+watch(activeCategory, () => {
+  activeSub.value = null
+  selectedPanelSize.value = null
+  selectedPanelColor.value = null
+})
 
 watch(searchQuery, (q) => {
   router.replace({ query: { ...route.query, search: q || undefined } })
@@ -654,6 +763,38 @@ const filteredItems = computed(() => {
       return true
     })
   }
+  // Фильтр по выбранному размеру из инфо-панели
+  if (selectedPanelSize.value) {
+    const [sizeStr, group] = selectedPanelSize.value.split('|')
+    const dims = sizeStr.replace(' мм', '').split('×')
+    if (group === 'posts') {
+      result = result.filter(i => {
+        if (i.sub !== 'posts' && i.sub !== 'flanets') return false
+        return dims.some(d => i.title.includes(d.replace(',', '.')))
+      })
+    } else {
+      const isD5 = group === '5mm'
+      result = result.filter(i => {
+        if (i.sub && i.sub !== 'panels') return false
+        const hasAllDims = dims.every(d => i.title.includes(d))
+        if (!hasAllDims) return false
+        if (isD5) return i.title.includes('d5') || i.title.includes('5мм')
+        return !i.title.includes('d5')
+      })
+    }
+  }
+  // Фильтр по выбранному цвету из инфо-панели
+  if (selectedPanelColor.value) {
+    const name = selectedPanelColor.value.name.toLowerCase()
+    const ral  = selectedPanelColor.value.ral.toLowerCase()
+    const byColor = result.filter(i => {
+      const t = (i.title + ' ' + (i.description || '')).toLowerCase()
+      return t.includes(name) || t.includes(ral) || t.includes('ral')
+    })
+    result = byColor.length > 0
+      ? byColor
+      : result.filter(i => i.title.toLowerCase().includes('цвет'))
+  }
   return result
 })
 
@@ -679,11 +820,6 @@ watch([activeCategory, searchQuery, activeSub, priceMin, priceMax], () => {
   visibleCount.value = 24
   sortBy.value = 'default'
 })
-
-function openDetail(item) {
-  detailItem.value = item
-  detailPhotoIdx.value = 0
-}
 
 function openOrder(item) {
   orderItem.value = item
@@ -1058,12 +1194,22 @@ async function submitOrder() {
   transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
 }
 .catalog__cat-card-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-  margin-bottom: 0.3rem;
-  transition: transform 0.3s;
+  width: 38px; height: 38px;
+  background: rgba(230,184,0,0.07);
+  border: 1px solid rgba(230,184,0,0.14);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #777;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, color 0.3s, border-color 0.3s;
 }
-.catalog__cat-card:hover .catalog__cat-card-icon { transform: scale(1.2) rotate(-5deg); }
+.catalog__cat-card:hover .catalog__cat-card-icon {
+  transform: scale(1.14) rotate(-8deg);
+  background: rgba(230,184,0,0.14);
+  border-color: rgba(230,184,0,0.3);
+  color: #e6b800;
+}
 
 .catalog__cat-card::before {
   content: '';
@@ -1387,9 +1533,12 @@ async function submitOrder() {
   border: 1px solid #2a2a2a;
   border-radius: 999px;
   padding: 0.3rem 0.75rem 0.3rem 0.4rem;
-  transition: border-color 0.15s;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
 }
-.panels-info__color:hover { border-color: rgba(230,184,0,0.3); }
+.panels-info__color:hover { border-color: rgba(230,184,0,0.35); transform: translateY(-1px); }
+.panels-info__color.selected { border-color: #e6b800; background: rgba(230,184,0,0.1); box-shadow: 0 0 0 3px rgba(230,184,0,0.12); }
 .panels-info__color-dot {
   width: 14px; height: 14px;
   border-radius: 50%;
@@ -1416,7 +1565,29 @@ async function submitOrder() {
   font-size: 0.78rem;
   color: #909090;
   white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.15s;
 }
+.panels-info__size:hover { border-color: rgba(230,184,0,0.4); color: #e6b800; transform: translateY(-1px); }
+.panels-info__size.selected { background: #e6b800; border-color: #e6b800; color: #0a0a0a; font-weight: 700; transform: none; }
+
+/* Бейдж активного фильтра */
+.panel-filter-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(230,184,0,0.08); border: 1px solid rgba(230,184,0,0.25);
+  border-radius: 999px; padding: 0.4rem 0.5rem 0.4rem 0.9rem;
+  font-size: 0.8rem; color: #e6b800; font-weight: 600;
+  margin-bottom: 1rem;
+}
+.panel-filter-badge__dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; vertical-align: middle; margin-right: 2px; }
+.panel-filter-badge__clear {
+  background: rgba(230,184,0,0.12); border: none; border-radius: 50%;
+  width: 20px; height: 20px; cursor: pointer; color: #e6b800;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.panel-filter-badge__clear:hover { background: rgba(230,184,0,0.25); }
 @media (max-width: 700px) {
   .panels-info__sizes { grid-template-columns: 1fr; }
 }
@@ -1688,7 +1859,7 @@ async function submitOrder() {
   margin-top: 0.5rem;
 }
 
-.detail__btn { flex: 1; min-width: 160px; padding: 0.85rem 1.5rem; font-size: 1rem; }
+.detail__btn { flex: 1; min-width: 160px; padding: 0.85rem 1.5rem; font-size: 1rem; text-align: center; display: flex; align-items: center; justify-content: center; }
 
 .detail__btn-page {
   display: inline-flex;
@@ -1771,4 +1942,148 @@ async function submitOrder() {
 .catalog-skeleton__line--lg  { height: 14px; width: 85%; }
 .catalog-skeleton__line--md  { height: 10px; width: 65%; }
 .catalog-skeleton__footer    { height: 32px; border-radius: 8px; margin-top: 0.4rem; background: linear-gradient(90deg, #161616 25%, #1e1e1e 50%, #161616 75%); background-size: 800px 100%; animation: shimmer 1.4s infinite linear; }
+
+/* ── Заголовок раздела — новый ── */
+.catalog__section-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.catalog__section-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(230,184,0,0.12);
+  border: 1px solid rgba(230,184,0,0.25);
+  color: #e6b800;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Пиллы сортировки ── */
+.catalog__sort-pills {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.catalog__sort-pill {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.03);
+  color: #555;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.catalog__sort-pill:hover { border-color: rgba(230,184,0,0.35); color: #ccc; }
+.catalog__sort-pill.active {
+  background: rgba(230,184,0,0.12);
+  border-color: rgba(230,184,0,0.5);
+  color: #e6b800;
+}
+
+/* ── Переключатель вид ── */
+.catalog__view-toggle {
+  display: flex;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.catalog__view-btn {
+  width: 32px; height: 32px;
+  background: none; border: none;
+  color: #444; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.catalog__view-btn:hover { color: #999; }
+.catalog__view-btn.active { background: rgba(230,184,0,0.14); color: #e6b800; }
+
+/* ── TransitionGroup items ── */
+.ci-enter-active {
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--stagger, 0ms);
+}
+.ci-leave-active { transition: opacity 0.15s ease; }
+.ci-enter-from { opacity: 0; transform: translateY(12px); }
+.ci-leave-to   { opacity: 0; }
+.ci-move { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ── Grid режим ── */
+.catalog__list--grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1rem;
+}
+.catalog-item--grid {
+  grid-template-columns: 1fr !important;
+  flex-direction: column;
+}
+.catalog-item--grid .catalog-item__img {
+  min-height: 180px;
+  max-height: 200px;
+}
+.catalog-item--grid .catalog-item__content {
+  padding: 1.1rem;
+  gap: 0.45rem;
+}
+.catalog-item--grid .catalog-item__title { font-size: 0.9rem; }
+.catalog-item--grid .catalog-item__desc  { font-size: 0.78rem; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.catalog-item--grid .catalog-item__footer { flex-wrap: nowrap; gap: 0.5rem; }
+.catalog-item--grid .catalog-item__btn { font-size: 0.78rem; padding: 0.5rem 0.8rem; flex: 1; }
+
+/* ── Кнопка "В список" + тултип ── */
+.catalog-item__add {
+  position: relative;
+}
+.catalog-item__add-tip {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  right: 0;
+  background: rgba(10,10,10,0.96);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #aaa;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.22rem 0.55rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.15s, transform 0.15s;
+}
+.catalog-item__add:hover .catalog-item__add-tip { opacity: 1; transform: translateY(0); }
+.catalog-item__add.added .catalog-item__add-tip { color: #4ade80; border-color: rgba(74,222,128,0.2); }
+
+/* ── Бейдж "В списке" на фото ── */
+.catalog-item__in-list-badge {
+  position: absolute;
+  top: 8px; left: 8px;
+  background: rgba(74,222,128,0.9);
+  backdrop-filter: blur(6px);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  animation: badge-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes badge-in {
+  from { opacity: 0; transform: scale(0.7) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .catalog__sort-pills { display: none; }
+  .catalog__view-toggle { display: none; }
+  .catalog__list--grid { grid-template-columns: repeat(2, 1fr); }
+}
 </style>

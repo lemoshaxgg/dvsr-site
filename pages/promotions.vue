@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBar />
+
 
     <main class="promo-page">
       <div class="promo-page__hero">

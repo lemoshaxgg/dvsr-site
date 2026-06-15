@@ -42,7 +42,68 @@
           <span v-if="cartCount > 0" class="navbar__cart-badge">{{ cartCount }}</span>
         </button>
 
-        <a href="/#contact" class="navbar__link navbar__link--cta">Связаться</a>
+        <!-- Связаться — дропдаун контактов -->
+        <div class="navbar__contact-wrap" @mouseenter="contactOpen = true" @mouseleave="contactOpen = false">
+          <button class="navbar__link navbar__link--cta navbar__contact-btn">
+            Связаться
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24"
+              class="navbar__drop-arrow" :class="{ rotated: contactOpen }">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+
+          <transition name="dropdown">
+            <div v-if="contactOpen" class="navbar__contact-drop">
+              <a href="tel:+79143292929" class="navbar__contact-item">
+                <span class="navbar__contact-item-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                      d="M22 16.92v3a2 2 0 01-2.18 2A19.79 19.79 0 013.07 9.81 19.79 19.79 0 01.07 1.18 2 2 0 012.06 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/>
+                  </svg>
+                </span>
+                <span class="navbar__contact-item-text">
+                  <span class="navbar__contact-item-label">Телефон</span>
+                  <span class="navbar__contact-item-value">+7 914 329-29-29</span>
+                </span>
+              </a>
+
+              <a href="https://t.me/dsr2025" target="_blank" rel="noopener" class="navbar__contact-item">
+                <span class="navbar__contact-item-icon navbar__contact-item-icon--tg">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                  </svg>
+                </span>
+                <span class="navbar__contact-item-text">
+                  <span class="navbar__contact-item-label">Telegram</span>
+                  <span class="navbar__contact-item-value">@dsr2025</span>
+                </span>
+              </a>
+
+              <a href="https://e.mail.ru/compose/?to=ooo-dsr@bk.ru" target="_blank" rel="noopener" class="navbar__contact-item">
+                <span class="navbar__contact-item-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                      d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" points="22,6 12,13 2,6"/>
+                  </svg>
+                </span>
+                <span class="navbar__contact-item-text">
+                  <span class="navbar__contact-item-label">Email</span>
+                  <span class="navbar__contact-item-value">ooo-dsr@bk.ru</span>
+                </span>
+              </a>
+
+              <div class="navbar__contact-divider"></div>
+
+              <a href="/#contact" class="navbar__contact-cta">
+                Оставить заявку
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24">
+                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
+          </transition>
+        </div>
       </nav>
 
       <!-- Бургер -->
@@ -104,10 +165,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const menuOpen    = ref(false)
-const scrolled    = ref(false)
-const dropOpen    = ref(false)
-const catalogOpen = ref(false)
+const menuOpen     = ref(false)
+const scrolled     = ref(false)
+const dropOpen     = ref(false)
+const catalogOpen  = ref(false)
+const contactOpen  = ref(false)
 
 const { count: cartCount, drawerOpen } = useCart()
 function openDrawer() { drawerOpen.value = true }
@@ -514,6 +576,89 @@ const categories = [
   opacity: 0;
   transform: translateY(-8px);
 }
+
+/* ── Контакт-дропдаун ── */
+.navbar__contact-wrap {
+  position: relative;
+  margin-left: 0.4rem;
+}
+
+.navbar__contact-btn {
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.navbar__contact-drop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: rgba(14,14,14,0.97);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(230,184,0,0.2);
+  border-radius: 16px;
+  padding: 0.5rem;
+  min-width: 230px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
+  z-index: 200;
+}
+
+.navbar__contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.navbar__contact-item:hover { background: rgba(255,255,255,0.05); }
+
+.navbar__contact-item-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.07);
+  display: flex; align-items: center; justify-content: center;
+  color: #777;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.navbar__contact-item:hover .navbar__contact-item-icon { background: rgba(230,184,0,0.1); color: #e6b800; }
+.navbar__contact-item-icon--tg { color: #2bb5f0; }
+.navbar__contact-item:hover .navbar__contact-item-icon--tg { background: rgba(43,181,240,0.12); color: #2bb5f0; }
+
+.navbar__contact-item-text {
+  display: flex; flex-direction: column; gap: 0.05rem;
+}
+.navbar__contact-item-label {
+  font-size: 0.68rem; color: #444; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em;
+}
+.navbar__contact-item-value {
+  font-size: 0.85rem; color: #ccc; font-weight: 600;
+}
+.navbar__contact-item:hover .navbar__contact-item-value { color: #fff; }
+
+.navbar__contact-divider {
+  height: 1px; background: rgba(255,255,255,0.06); margin: 0.4rem 0.5rem;
+}
+
+.navbar__contact-cta {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: rgba(230,184,0,0.1);
+  border: 1px solid rgba(230,184,0,0.2);
+  border-radius: 10px;
+  color: #e6b800;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.navbar__contact-cta:hover { background: rgba(230,184,0,0.18); border-color: rgba(230,184,0,0.4); }
 
 @media (max-width: 768px) {
   .navbar__nav    { display: none; }
