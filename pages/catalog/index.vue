@@ -34,6 +34,7 @@
             </template>
           </nav>
           <h1 class="catalog__title">Каталог услуг и товаров</h1>
+          <p class="catalog__price-note">{{ PRICE_DISCLAIMER }}</p>
 
           <!-- Поиск + фильтр цены -->
           <div class="catalog__hero-controls">
@@ -49,9 +50,10 @@
                   class="catalog__search-input"
                   placeholder="Найти услугу или товар..."
                   autocomplete="off"
+                  aria-label="Поиск по каталогу"
                   @focus="dropVisible = true"
                 />
-                <button v-if="searchQuery" class="catalog__search-clear" @click="searchQuery = ''; dropVisible = false">✕</button>
+                <button v-if="searchQuery" class="catalog__search-clear" aria-label="Очистить поиск" @click="searchQuery = ''; dropVisible = false">✕</button>
               </div>
 
               <!-- Выпадающие подсказки -->
@@ -131,7 +133,11 @@
               :key="cat.id"
               class="catalog__sidebar-item"
               :class="{ active: activeCategory === cat.id }"
-              @click="activeCategory = cat.id; searchQuery = ''"
+              role="button"
+              tabindex="0"
+              :aria-pressed="activeCategory === cat.id"
+              @click="selectCategory(cat.id)"
+              @keydown.enter.space.prevent="selectCategory(cat.id)"
             >
               <span class="catalog__sidebar-label">{{ cat.label }}</span>
               <span v-if="countByCategory(cat.id)" class="catalog__sidebar-count">
@@ -151,19 +157,21 @@
               <div
                 v-for="cat in categories.filter(c => c.id !== 'all')"
                 :key="cat.id"
-                class="catalog__cat-card"
-                @click="activeCategory = cat.id"
+                class="catalog__cat-card grad-border"
+                role="button"
+                tabindex="0"
+                :aria-label="`Категория: ${cat.label}`"
+                @click="selectCategory(cat.id)"
+                @keydown.enter.space.prevent="selectCategory(cat.id)"
               >
-                <div class="catalog__cat-card-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24">
-                    <path :d="catIconPaths[cat.id] || 'M3 3h18v18H3z'" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
-                  </svg>
+                <div class="catalog__cat-card-visual">
+                  <div class="catalog__cat-card-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24">
+                      <path :d="catIconPaths[cat.id] || 'M3 3h18v18H3z'" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
+                    </svg>
+                  </div>
                 </div>
                 <span class="catalog__cat-card-label">{{ cat.label }}</span>
-                <span class="catalog__cat-card-count">{{ countByCategory(cat.id) }} позиций</span>
-                <svg class="catalog__cat-card-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
               </div>
             </div>
           </transition>
@@ -171,19 +179,25 @@
           <!-- Популярные товары (когда выбрано "Все" и нет поиска) -->
           <transition name="fade">
             <div v-if="activeCategory === 'all' && !searchQuery" class="catalog__popular">
-              <h3 class="catalog__popular-title">Популярные позиции</h3>
+              <h2 class="catalog__popular-title">Популярные позиции</h2>
               <div class="catalog__list">
-                <div v-for="item in popularItems" :key="item.id" class="catalog-item" @click="navigateTo('/catalog/' + item.id)">
+                <div v-for="item in popularItems" :key="item.id" class="catalog-item">
+                  <NuxtLink :to="`/catalog/${item.id}`" class="catalog-item__link" :aria-label="item.title" />
                   <div class="catalog-item__img">
                     <template v-if="item.photos && item.photos.length > 1">
-                      <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" />
-                      <button class="ci-carousel__prev" @click.stop="prevPhoto(item.id, item.photos.length)">&#8249;</button>
-                      <button class="ci-carousel__next" @click.stop="nextPhoto(item.id, item.photos.length)">&#8250;</button>
+                      <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" loading="lazy" />
+                      <button class="ci-carousel__prev" aria-label="Предыдущее фото" @click.stop="prevPhoto(item.id, item.photos.length)">&#8249;</button>
+                      <button class="ci-carousel__next" aria-label="Следующее фото" @click.stop="nextPhoto(item.id, item.photos.length)">&#8250;</button>
                       <div class="ci-carousel__dots">
                         <span v-for="(_, i) in item.photos" :key="i" class="ci-carousel__dot" :class="{ active: i === getPhotoIdx(item.id) }" @click.stop="setPhotoIdx(item.id, i)"></span>
                       </div>
                     </template>
-                    <img v-else-if="item.photo || item.photos" :src="item.photo || item.photos[0]" :alt="item.title" />
+                    <img v-else-if="productPhoto(item)"
+                      :src="productPhoto(item)"
+                      :alt="item.title"
+                      loading="lazy"
+                      @error="onPhotoError($event, item)"
+                    />
                     <div v-else class="catalog-item__placeholder">
                       <div class="catalog-item__placeholder-empty">
                         <span>{{ item.icon }}</span>
@@ -196,10 +210,11 @@
                     <p class="catalog-item__desc">{{ item.description }}</p>
                     <div class="catalog-item__footer">
                       <div class="catalog-item__price-block">
-                        <span class="catalog-item__price catalog-item__price--ask">Уточнить цену</span>
+                        <span v-if="priceFrom(item)" class="catalog-item__price">{{ priceFrom(item) }}</span>
+                    <span v-else class="catalog-item__price catalog-item__price--ask">Уточнить актуальную цену</span>
                       </div>
                       <button class="catalog-item__btn" @click.stop="openOrder(item)">Заявка</button>
-                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" @click.stop="addItem(item)">
+                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" :aria-label="hasItem(item.id) ? 'Уже в списке запросов' : 'Добавить в список запросов'" @click.stop="addItem(item)">
                     <svg v-if="!hasItem(item.id)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
                       <path stroke="currentColor" stroke-linecap="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
                     </svg>
@@ -236,12 +251,12 @@
               </div>
               <!-- Переключатель вид -->
               <div class="catalog__view-toggle">
-                <button class="catalog__view-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'" title="Список">
+                <button class="catalog__view-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'" title="Список" aria-label="Вид списком">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
                     <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
                   </svg>
                 </button>
-                <button class="catalog__view-btn" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'" title="Сетка">
+                <button class="catalog__view-btn" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'" title="Плиткой" aria-label="Вид плиткой">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
                     <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                     <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
@@ -348,7 +363,7 @@
                 <span class="panel-filter-badge__dot" :style="{ background: selectedPanelColor.hex }"></span>
                 {{ selectedPanelColor.name }} {{ selectedPanelColor.ral }}
               </span>
-              <button class="panel-filter-badge__clear" @click="clearPanelFilter">
+              <button class="panel-filter-badge__clear" aria-label="Сбросить фильтр панелей" @click="clearPanelFilter">
                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24">
                   <path stroke="currentColor" stroke-linecap="round" stroke-width="2.5" d="M18 6L6 18M6 6l12 12"/>
                 </svg>
@@ -394,18 +409,23 @@
               class="catalog-item"
               :class="{ 'catalog-item--grid': viewMode === 'grid' }"
               :style="{ '--stagger': `${Math.min(i % 24, 10) * 45}ms` }"
-              @click="navigateTo('/catalog/' + item.id)"
             >
+              <NuxtLink :to="`/catalog/${item.id}`" class="catalog-item__link" :aria-label="item.title" />
               <div class="catalog-item__img">
                 <template v-if="item.photos && item.photos.length > 1">
                   <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" loading="lazy" />
-                  <button class="ci-carousel__prev" @click.stop="prevPhoto(item.id, item.photos.length)">&#8249;</button>
-                  <button class="ci-carousel__next" @click.stop="nextPhoto(item.id, item.photos.length)">&#8250;</button>
+                  <button class="ci-carousel__prev" aria-label="Предыдущее фото" @click.stop="prevPhoto(item.id, item.photos.length)">&#8249;</button>
+                  <button class="ci-carousel__next" aria-label="Следующее фото" @click.stop="nextPhoto(item.id, item.photos.length)">&#8250;</button>
                   <div class="ci-carousel__dots">
                     <span v-for="(_, j) in item.photos" :key="j" class="ci-carousel__dot" :class="{ active: j === getPhotoIdx(item.id) }" @click.stop="setPhotoIdx(item.id, j)"></span>
                   </div>
                 </template>
-                <img v-else-if="item.photo || item.photos" :src="item.photo || item.photos[0]" :alt="item.title" loading="lazy" />
+                <img v-else-if="productPhoto(item)"
+                  :src="productPhoto(item)"
+                  :alt="item.title"
+                  loading="lazy"
+                  @error="onPhotoError($event, item)"
+                />
                 <div v-else class="catalog-item__placeholder">
                   <div class="catalog-item__placeholder-empty">
                     <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" class="catalog-item__placeholder-icon"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/></svg>
@@ -421,10 +441,11 @@
                 <p class="catalog-item__desc">{{ item.description }}</p>
                 <div class="catalog-item__footer">
                   <div class="catalog-item__price-block">
-                    <span class="catalog-item__price catalog-item__price--ask">Уточнить цену</span>
+                    <span v-if="priceFrom(item)" class="catalog-item__price">{{ priceFrom(item) }}</span>
+                    <span v-else class="catalog-item__price catalog-item__price--ask">Уточнить актуальную цену</span>
                   </div>
                   <button class="catalog-item__btn" @click.stop="openOrder(item)">Заявка</button>
-                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" @click.stop="addItem(item)">
+                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" :aria-label="hasItem(item.id) ? 'Уже в списке запросов' : 'Добавить в список запросов'" @click.stop="addItem(item)">
                     <svg v-if="!hasItem(item.id)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
                       <path stroke="currentColor" stroke-linecap="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
                     </svg>
@@ -453,17 +474,18 @@
     <transition name="modal">
       <div v-if="orderItem" class="modal-overlay" @click.self="orderItem = null">
         <div class="modal">
-          <button class="modal__close" @click="orderItem = null">
+          <button class="modal__close" aria-label="Закрыть" @click="orderItem = null">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
               <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </button>
           <h2 class="modal__title">{{ orderItem.title }}</h2>
-          <p class="modal__price modal__price--ask">Уточнить цену</p>
+          <p class="modal__price" :class="{ 'modal__price--ask': !priceFrom(orderItem) }">{{ priceFrom(orderItem) || 'Уточнить актуальную цену' }}</p>
 
           <form class="modal__form" @submit.prevent="submitOrder">
-            <input v-model="orderForm.name" type="text" placeholder="Ваше имя *" class="modal__input" maxlength="100" />
-            <input :value="orderForm.phone" @input="orderForm.phone = phoneMask($event.target.value)" type="tel" placeholder="+7 (___) ___-__-__" class="modal__input" maxlength="18" />
+            <input v-model="orderForm.company" type="text" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <input v-model="orderForm.name" type="text" placeholder="Ваше имя *" class="modal__input" maxlength="100" aria-label="Ваше имя" />
+            <input :value="orderForm.phone" @input="orderForm.phone = phoneMask($event.target.value)" type="tel" placeholder="+7 (___) ___-__-__" class="modal__input" maxlength="18" aria-label="Телефон" />
 
             <!-- Чекбокс установки — только для монтируемых категорий -->
             <label v-if="installableCategories.includes(orderItem.category)" class="modal__install">
@@ -474,7 +496,7 @@
               </span>
             </label>
 
-            <textarea v-model="orderForm.message" placeholder="Комментарий — размеры, объём, адрес объекта..." class="modal__input modal__textarea" rows="3" maxlength="500"></textarea>
+            <textarea v-model="orderForm.message" placeholder="Комментарий — размеры, объём, адрес объекта..." class="modal__input modal__textarea" rows="3" maxlength="500" aria-label="Комментарий"></textarea>
             <button type="submit" class="modal__submit" :disabled="orderLoading">
               {{ orderLoading ? 'Отправка...' : 'Отправить заявку' }}
             </button>
@@ -484,17 +506,6 @@
       </div>
     </transition>
 
-    <footer class="footer">
-      <div class="footer__inner">
-        <p class="footer__name">ДСР — Дальневосточные Системы Развития</p>
-        <p class="footer__contacts">
-          г. Владивосток, ул. Русская, д. 17, каб. 704 &nbsp;|&nbsp;
-          <a href="tel:+79143292929">+7 914 329-29-29</a> &nbsp;|&nbsp;
-          <a href="https://e.mail.ru/compose/?to=ooo-dsr@bk.ru" target="_blank" rel="noopener">ooo-dsr@bk.ru</a>
-        </p>
-        <p class="footer__copy">© {{ new Date().getFullYear() }} ДСР. Все права защищены.</p>
-      </div>
-    </footer>
   </div>
 </template>
 
@@ -502,6 +513,7 @@
 import { ref, computed, reactive, watch, nextTick } from 'vue'
 import { phoneMask } from '~/composables/usePhoneMask.js'
 import { categories, items as staticItems, subcategories } from '~/data/catalog.js'
+import { priceFrom, PRICE_DISCLAIMER } from '~/composables/usePrice.js'
 
 const catIconPaths = {
   fence3d:   'M3 21V9m3-4v16M9 21V5l3-4v20M15 21V5l3-4v16M21 21V9M3 13h18',
@@ -543,11 +555,13 @@ const items = reactive([...staticItems])
 const { data: dynamicItemsData, pending: catalogPending } = await useFetch('/data/catalog-items.json', { lazy: true, server: false, default: () => [] })
 watch(dynamicItemsData, (val) => { if (val?.length) items.push(...val) }, { immediate: true })
 
-useHead({ title: 'Каталог товаров и услуг — ДСР Владивосток' })
+useHead({ title: 'Каталог: заборы 3D, сваи, септики, стройматериалы — ДСР Владивосток' })
 useSeoMeta({
-  description: 'Каталог строительных материалов, трубопроводной арматуры, кабелей, металлопроката, септиков и оборудования. ООО ДСР — Владивосток. Более 2300 позиций.',
-  ogTitle: 'Каталог товаров — ДСР Владивосток',
-  ogDescription: 'Строительные материалы и оборудование. Более 2300 позиций. Доставка по Приморскому краю.',
+  description: 'Каталог ДСР Владивосток: заборы 3D и ворота, винтовые сваи, септики, кессоны, сетки, стройматериалы и оборудование. Цены, снабжение, поставка и монтаж по Приморскому краю. Более 2300 позиций.',
+  ogTitle: 'Каталог товаров и услуг — ДСР Владивосток',
+  ogDescription: 'Заборы 3D, сваи, септики, стройматериалы с ценами. Поставка и монтаж по Приморскому краю.',
+  ogImage: 'https://dvsr-site.vercel.app/og-dsr.jpg',
+  ogUrl: 'https://dvsr-site.vercel.app/catalog',
 })
 
 const route = useRoute()
@@ -561,9 +575,30 @@ const priceMax = ref(null)
 const orderItem = ref(null)
 const orderLoading = ref(false)
 const orderSuccess = ref(false)
-const orderForm = reactive({ name: '', phone: '', message: '', needInstall: false })
+const orderForm = reactive({ name: '', phone: '', message: '', needInstall: false, company: '' })
 
 const photoIndexes = reactive({})
+const failedPrimaryPhotos = reactive(new Set())
+const failedFallbackPhotos = reactive(new Set())
+
+function productPhoto(item) {
+  // Внешнее фото (CDN Сигнала) — напрямую, без products/{id}.jpg
+  if (item.photo && /^https?:/.test(item.photo)) {
+    return failedFallbackPhotos.has(item.id) ? null : item.photo
+  }
+  if (!failedPrimaryPhotos.has(item.id)) return `/catalog/products/${item.id}.jpg`
+  if (failedFallbackPhotos.has(item.id)) return null
+  return item.photo || item.photos?.[0] || null
+}
+
+function onPhotoError(e, item) {
+  if (!failedPrimaryPhotos.has(item.id)) {
+    failedPrimaryPhotos.add(item.id)
+  } else {
+    failedFallbackPhotos.add(item.id)
+  }
+}
+
 const panelsInfoOpen = ref(true)
 const selectedPanelSize  = ref(null)  // "1530×2510 мм|4mm" или null
 const selectedPanelColor = ref(null)  // { name, ral, hex } или null
@@ -642,19 +677,37 @@ function selectSuggestion(item) {
 
 function closeDropdown() { dropVisible.value = false }
 
+// Выбор категории + прокрутка к товарам на мобиле (сайдбар стоит над списком)
+function selectCategory(catId) {
+  activeCategory.value = catId
+  searchQuery.value = ''
+  if (process.client && window.innerWidth <= 900) {
+    nextTick(() => {
+      const el = document.querySelector('.catalog__main')
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.scrollY - 64
+        window.scrollTo({ top, behavior: 'smooth' })
+      }
+    })
+  }
+}
+
 watch(activeCategory, () => {
   activeSub.value = null
   selectedPanelSize.value = null
   selectedPanelColor.value = null
 })
 
-watch(searchQuery, (q) => {
+watch(searchQuery, (q, prev) => {
   router.replace({ query: { ...route.query, search: q || undefined } })
   if (q.trim()) {
     dropVisible.value = true
-    nextTick(() => {
-      document.querySelector('.catalog__main')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
+    // прокручиваем к результатам только при начале ввода, а не на каждый символ
+    if (!prev || !prev.trim()) {
+      nextTick(() => {
+        document.querySelector('.catalog__main')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
   }
 })
 
@@ -669,7 +722,11 @@ const vClickOutside = {
 const categoryMap = Object.fromEntries(categories.map(c => [c.id, c.label]))
 
 const POPULAR_IDS = [1, 5, 34, 58, 15]
-const popularItems = computed(() => items.filter(i => POPULAR_IDS.includes(i.id)))
+const popularItems = computed(() => {
+  const picked = items.filter(i => POPULAR_IDS.includes(i.id))
+  // запасной вариант, если хардкод-ID устарели
+  return picked.length >= 3 ? picked : items.slice(0, 5)
+})
 
 function countByCategory(catId) {
   if (catId === 'all') return items.length
@@ -818,7 +875,6 @@ const paginatedItems = computed(() => sortedItems.value.slice(0, visibleCount.va
 
 watch([activeCategory, searchQuery, activeSub, priceMin, priceMax], () => {
   visibleCount.value = 24
-  sortBy.value = 'default'
 })
 
 function openOrder(item) {
@@ -835,13 +891,14 @@ async function submitOrder() {
   orderLoading.value = true
 
   const priceText = orderItem.value.basePrice
-    ? `от ${orderItem.value.basePrice.toLocaleString('ru-RU')} ₽ / ${orderItem.value.unit}`
-    : orderItem.value.price
+    ? `от ${orderItem.value.basePrice.toLocaleString('ru-RU')} ₽${orderItem.value.unit ? ' / ' + orderItem.value.unit : ''}`
+    : (orderItem.value.price || 'Уточнить цену')
 
   try {
     await $fetch('/api/contact', {
       method: 'POST',
       body: {
+        company: orderForm.company,
         name: orderForm.name,
         phone: orderForm.phone,
         email: null,
@@ -870,9 +927,21 @@ async function submitOrder() {
 
 /* Шапка */
 .catalog__hero {
-  background: radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0a 80%);
+  background:
+    radial-gradient(ellipse 70% 60% at 50% -10%, rgba(230,184,0,0.13) 0%, transparent 60%),
+    radial-gradient(ellipse 35% 40% at 95% 30%, rgba(230,184,0,0.06) 0%, transparent 50%),
+    #0a0a0a;
   padding: 6rem 1.5rem 2.5rem;
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid rgba(230,184,0,0.08);
+  position: relative;
+  overflow: hidden;
+}
+.catalog__hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(230,184,0,0.3), transparent);
 }
 .catalog__hero-inner { max-width: 1300px; margin: 0 auto; }
 
@@ -1019,7 +1088,20 @@ async function submitOrder() {
 .catalog__breadcrumb a { color: #e6b800; text-decoration: none; opacity: 0.8; }
 .catalog__breadcrumb a:hover { opacity: 1; }
 
-.catalog__title { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; color: #fff; margin-bottom: 1.25rem; }
+.catalog__title {
+  font-family: 'Space Grotesk', 'Montserrat', sans-serif;
+  font-size: clamp(1.5rem, 5.5vw, 2.9rem);
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  background: linear-gradient(118deg, #ffffff 0%, #ffe9a3 58%, #e6b800 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.catalog__title span { color: #e6b800; -webkit-text-fill-color: #e6b800; }
+.catalog__price-note { font-size: 0.76rem; color: #666; line-height: 1.4; max-width: 620px; margin: 0 0 1.25rem; }
 
 /* Поиск */
 .catalog__search-wrap {
@@ -1105,8 +1187,8 @@ async function submitOrder() {
 
 /* Боковая панель */
 .catalog__sidebar {
-  background: #111;
-  border: 1px solid #1e1e1e;
+  background: #0d0d0d;
+  border: 1px solid rgba(230,184,0,0.1);
   border-radius: 16px;
   overflow: hidden;
   position: sticky;
@@ -1114,17 +1196,18 @@ async function submitOrder() {
   max-height: calc(100vh - 100px);
   display: flex;
   flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
 }
 
 .catalog__sidebar-title {
   padding: 1rem 1.25rem;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   color: #e6b800;
-  background: rgba(230,184,0,0.06);
-  border-bottom: 1px solid #1e1e1e;
+  background: rgba(230,184,0,0.05);
+  border-bottom: 1px solid rgba(230,184,0,0.08);
   flex-shrink: 0;
 }
 
@@ -1175,90 +1258,64 @@ async function submitOrder() {
 /* Карточки категорий */
 .catalog__cats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
   margin-bottom: 2.5rem;
 }
 
 .catalog__cat-card {
   position: relative;
   overflow: hidden;
-  background: #111;
+  background: #0f0f0f;
   border: 1px solid #1e1e1e;
-  border-radius: 12px;
-  padding: 1.1rem 1.25rem 1rem;
+  border-radius: 14px;
+  padding: 1.5rem 1rem 1.25rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  align-items: center;
+  gap: 0.75rem;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s, background 0.25s;
+  min-height: 130px;
 }
-.catalog__cat-card-icon {
-  width: 38px; height: 38px;
-  background: rgba(230,184,0,0.07);
-  border: 1px solid rgba(230,184,0,0.14);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  color: #777;
-  margin-bottom: 0.5rem;
-  flex-shrink: 0;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, color 0.3s, border-color 0.3s;
-}
-.catalog__cat-card:hover .catalog__cat-card-icon {
-  transform: scale(1.14) rotate(-8deg);
-  background: rgba(230,184,0,0.14);
-  border-color: rgba(230,184,0,0.3);
-  color: #e6b800;
-}
-
-.catalog__cat-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(120deg, transparent 0%, rgba(230,184,0,0.08) 50%, transparent 100%);
-  transform: translateX(-100%);
-  transition: transform 0.5s ease;
-}
-
-.catalog__cat-card:hover::before {
-  transform: translateX(100%);
-}
-
 .catalog__cat-card:hover {
-  border-color: rgba(230,184,0,0.5);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(230,184,0,0.08);
+  border-color: rgba(230,184,0,0.4);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  background: #121210;
   transform: translateY(-3px);
 }
 
-.catalog__cat-card-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #e0e0e0;
-  line-height: 1.3;
-  flex: 1;
-}
-.catalog__cat-card:hover .catalog__cat-card-label { color: #fff; }
-
-.catalog__cat-card-count {
-  font-size: 0.7rem;
-  color: #444;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.catalog__cat-card-visual {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.catalog__cat-card-arrow {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%) translateX(-4px);
-  color: #333;
-  transition: transform 0.25s, color 0.25s;
-  opacity: 0;
-}
-.catalog__cat-card:hover .catalog__cat-card-arrow {
-  opacity: 1;
+.catalog__cat-card-icon {
+  width: 54px; height: 54px;
+  background: linear-gradient(150deg, rgba(245,200,66,0.14), rgba(230,184,0,0.04));
+  border: 1px solid rgba(230,184,0,0.22);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
   color: #e6b800;
-  transform: translateY(-50%) translateX(0);
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s, border-color 0.3s;
+}
+.catalog__cat-card:hover .catalog__cat-card-icon {
+  transform: translateY(-3px);
+  border-color: rgba(230,184,0,0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 20px rgba(230,184,0,0.18);
+}
+
+.catalog__cat-card-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #ccc;
+  line-height: 1.3;
+  text-align: center;
 }
 
 /* Заголовок раздела */
@@ -1314,18 +1371,19 @@ async function submitOrder() {
 
 /* Элемент */
 .catalog-item {
+  position: relative;
   display: grid;
-  grid-template-columns: 280px 1fr;
-  background: linear-gradient(145deg, #141410, #111);
-  border: 1px solid #1e1e1e;
+  grid-template-columns: 260px 1fr;
+  background: #0e0e0e;
+  border: 1px solid #1a1a1a;
   border-radius: 16px;
   overflow: hidden;
-  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+  cursor: pointer;
 }
 .catalog-item:hover {
-  border-color: rgba(230,184,0,0.45);
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(230,184,0,0.07);
-  transform: translateY(-2px);
+  border-color: rgba(230,184,0,0.4);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(230,184,0,0.05), 0 0 32px rgba(230,184,0,0.05);
 }
 
 .catalog-item__img { min-height: 200px; background: #0d0d0d; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
@@ -1703,14 +1761,14 @@ async function submitOrder() {
   .catalog__hero-controls { flex-direction: column; }
   .catalog__hero-price { width: 100%; }
   .catalog__hero-price-inputs { border-radius: 12px; }
-  .catalog__cats { grid-template-columns: repeat(2, 1fr); }
+  .catalog__cats { grid-template-columns: repeat(3, 1fr); }
   .catalog-item { grid-template-columns: 1fr; }
   .catalog-item__img, .catalog-item__placeholder { min-height: 180px; }
   .catalog-item__content { padding: 1.25rem; }
 }
 
 @media (max-width: 480px) {
-  .catalog__cats { grid-template-columns: 1fr 1fr; }
+  .catalog__cats { grid-template-columns: repeat(2, 1fr); }
   .catalog-item__btn { width: 100%; text-align: center; }
 }
 
@@ -1892,6 +1950,21 @@ async function submitOrder() {
 .detail__btn-close:hover { border-color: #555; color: #ccc; }
 
 .catalog-item { cursor: pointer; }
+
+/* Stretched-link: настоящая ссылка поверх карточки (SEO + клавиатура + новая вкладка) */
+.catalog-item__link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  font-size: 0;
+}
+/* Интерактив поверх ссылки */
+.catalog-item__btn,
+.catalog-item__add,
+.ci-carousel__prev,
+.ci-carousel__next,
+.ci-carousel__dots { z-index: 2; }
 
 @media (max-width: 640px) {
   .modal--detail { flex-direction: column; padding: 1.25rem; }

@@ -1,14 +1,14 @@
 ﻿export const categories = [
   { id: 'all',       label: 'Все категории' },
-  { id: 'fence3d',   label: '3D заборы и ворота' },
-  { id: 'mesh',      label: 'Сетки' },
-  { id: 'piles',     label: 'Сваи и фундаменты' },
-  { id: 'septic',    label: 'Септики и очистные' },
+  { id: 'fence3d',   label: '3D заборы и ворота',      img: '/catalog/categories/fence3d2.jpg' },
+  { id: 'mesh',      label: 'Сетки',                   img: '/catalog/categories/mesh.jpg' },
+  { id: 'piles',     label: 'Сваи и фундаменты',       img: '/catalog/categories/piles.jpg' },
+  { id: 'septic',    label: 'Септики и очистные',      img: '/catalog/categories/septic2.jpg' },
   { id: 'kesson',    label: 'Кессоны' },
   { id: 'cellar',    label: 'Погреба' },
   { id: 'tanks',     label: 'Ёмкости пластиковые' },
   { id: 'fglass',    label: 'Стеклопластик (ЛОС)' },
-  { id: 'proflist',  label: 'Профлист и алюминий' },
+  { id: 'proflist',  label: 'Профлист и алюминий',     img: '/catalog/categories/proflist.jpg' },
   { id: 'rail',      label: 'Нерж. ограждения' },
   { id: 'boiler',    label: 'Котлы отопительные' },
   { id: 'chimney',   label: 'Дымоходы' },
@@ -387,17 +387,17 @@ export const items = [
   { id: 205, category: 'tanks', sub: 'slim', icon: '🛢️', title: 'Ёмкость SLIM 1000л',  price: 'Уточнить', basePrice: 32000, unit: 'шт', description: 'Узкая пластиковая ёмкость SLIM 1000 литров.' },
 
   // ─── СЕПТИКИ ТОПАС ───────────────────────────────────────────
-  { id: 206, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 4',         price: 'Уточнить', basePrice: 145980, unit: 'шт', description: 'Станция биологической очистки ТОПАС 4. До 4 человек, 0.8 м³/сут.' },
-  { id: 207, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 5',         price: 'Уточнить', basePrice: 168000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 5. До 5 человек, 1.0 м³/сут.' },
-  { id: 208, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 6',         price: 'Уточнить', basePrice: 188000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 6. До 6 человек, 1.2 м³/сут.' },
-  { id: 209, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 8',         price: 'Уточнить', basePrice: 215000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 8. До 8 человек, 1.5 м³/сут.' },
-  { id: 210, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 10',        price: 'Уточнить', basePrice: 248000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 10. До 10 человек, 2.0 м³/сут.' },
-  { id: 211, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 12',        price: 'Уточнить', basePrice: 285000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 12. До 12 человек, 2.4 м³/сут.' },
-  { id: 212, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 15',        price: 'Уточнить', basePrice: 351270, unit: 'шт', description: 'Станция биологической очистки ТОПАС 15. До 15 человек, 3.0 м³/сут.' },
-  { id: 213, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 5 Long',    price: 'Уточнить', basePrice: 195000, unit: 'шт', description: 'ТОПАС 5 Long — удлинённый корпус для глубокого залегания грунтовых вод.' },
-  { id: 214, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 8 Long',    price: 'Уточнить', basePrice: 238000, unit: 'шт', description: 'ТОПАС 8 Long — удлинённый корпус для глубокого залегания грунтовых вод.' },
-  { id: 215, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 5 PR',     price: 'Уточнить', basePrice: 185000, unit: 'шт', description: 'ТОПАС 5 PR — принудительный насос для откачки на рельеф.' },
-  { id: 216, category: 'septic', sub: 'topas', icon: '💧', title: 'Септик ТОПАС 8 PR',     price: 'Уточнить', basePrice: 225000, unit: 'шт', description: 'ТОПАС 8 PR — принудительный насос для откачки на рельеф.' },
+  { id: 206, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 4',         price: 'Уточнить', basePrice: 145980, unit: 'шт', description: 'Станция биологической очистки ТОПАС 4. До 4 человек, 0.8 м³/сут.' },
+  { id: 207, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 5',         price: 'Уточнить', basePrice: 168000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 5. До 5 человек, 1.0 м³/сут.' },
+  { id: 208, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 6',         price: 'Уточнить', basePrice: 188000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 6. До 6 человек, 1.2 м³/сут.' },
+  { id: 209, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 8',         price: 'Уточнить', basePrice: 215000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 8. До 8 человек, 1.5 м³/сут.' },
+  { id: 210, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 10',        price: 'Уточнить', basePrice: 248000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 10. До 10 человек, 2.0 м³/сут.' },
+  { id: 211, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 12',        price: 'Уточнить', basePrice: 285000, unit: 'шт', description: 'Станция биологической очистки ТОПАС 12. До 12 человек, 2.4 м³/сут.' },
+  { id: 212, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 15',        price: 'Уточнить', basePrice: 351270, unit: 'шт', description: 'Станция биологической очистки ТОПАС 15. До 15 человек, 3.0 м³/сут.' },
+  { id: 213, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 5 Long',    price: 'Уточнить', basePrice: 195000, unit: 'шт', description: 'ТОПАС 5 Long — удлинённый корпус для глубокого залегания грунтовых вод.' },
+  { id: 214, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 8 Long',    price: 'Уточнить', basePrice: 238000, unit: 'шт', description: 'ТОПАС 8 Long — удлинённый корпус для глубокого залегания грунтовых вод.' },
+  { id: 215, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 5 PR',      price: 'Уточнить', basePrice: 185000, unit: 'шт', description: 'ТОПАС 5 PR — принудительный насос для откачки на рельеф.' },
+  { id: 216, category: 'septic', sub: 'topas', icon: '💧', photo: '/catalog/septic-topas.jpg', title: 'Септик ТОПАС 8 PR',      price: 'Уточнить', basePrice: 225000, unit: 'шт', description: 'ТОПАС 8 PR — принудительный насос для откачки на рельеф.' },
 
   // ─── 3D ПАНЕЛИ ЦВЕТНЫЕ ───────────────────────────────────────
   { id: 217, category: 'fence3d', sub: 'panels', icon: '🔲', photo: '/catalog/panel-3d-1.jpg', title: '3D панель цветная 1500×2500 RAL 6005 (зелёный)',   price: 'Уточнить', basePrice: 2200, unit: 'шт', description: 'Цветная 3D панель с полимерным покрытием RAL 6005 (тёмно-зелёный). 1500×2500мм, d4мм.' },
@@ -437,18 +437,18 @@ export const items = [
   { id: 249, category: 'formwork', sub: 'parts', icon: '🔩', title: 'Подкос опалубки регулируемый',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Регулируемый подкос для выравнивания опалубки. Длина 1.5–3.5м.' },
 
   // ─── МАЛАЯ МЕХАНИЗАЦИЯ ───────────────────────────────────────
-  { id: 250, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/PT900D.webp', title: 'Затирочная машина GIKS PT900D',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Профессиональная затирочная машина GIKS PT900D. Диаметр ∅900мм, двигатель Honda GX690, 4 лопасти.' },
-  { id: 251, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/PT600H.webp', title: 'Затирочная машина GIKS PT600H',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина GIKS PT600H. Диаметр ∅600мм, двигатель Honda GX200, 4 лопасти.' },
-  { id: 252, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/PT600D.webp', title: 'Затирочная машина GIKS PT600D',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина GIKS PT600D. Диаметр ∅600мм, двигатель Dunfeng, 4 лопасти.' },
-  { id: 253, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/mt-364-1.webp', title: 'Затирочная машина KOMAN MT36-4 ST',  price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина KOMAN MT36-4 ST. Диаметр ∅900мм, Honda GX390, 4 лопасти, электростартер.' },
-  { id: 254, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/mt-364-1.webp', title: 'Затирочная машина KOMAN MT36-4',     price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина KOMAN MT36-4. Диаметр ∅900мм, Loncin/Honda GX390, 4 лопасти.' },
-  { id: 255, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/mrt73_optimized.webp', title: 'Затирочная машина KOMAN MRT73',      price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Двухроторная затирочная машина KOMAN MRT73. Рабочая ширина ∅1800мм. Для больших площадей.' },
-  { id: 256, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/mt-36-2.webp', title: 'Затирочная машина KOMAN MT36-2ST',   price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина KOMAN MT36-2ST. Диаметр ∅900мм, 2 лопасти, электростартер.' },
-  { id: 257, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/lopast-koman2_optimized.webp', title: 'Лопасти 6"×14" комб. для MT36/MRT73',  price: 'Уточнить', basePrice: null, unit: 'компл', description: 'Лопасти комбинированные 6"×14" для затирочных машин KOMAN MT36 и MRT73.' },
-  { id: 258, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/disc-koman2_optimized.png', title: 'Диск затирочный 37" для MT36/MRT73',  price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Диск затирочный 37" (940мм) для KOMAN MT36 и MRT73.' },
-  { id: 259, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/disc-koman.png', title: 'Диск затирочный 31" для MT30',         price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Диск затирочный 31" (785мм) для KOMAN MT30.' },
-  { id: 260, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/lopast-koman_optimized.webp', title: 'Лопасти 4.75"×9" комб. для MT24',      price: 'Уточнить', basePrice: null, unit: 'компл', description: 'Лопасти комбинированные 4.75"×9" для затирочной машины KOMAN MT24.' },
-  { id: 261, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: 'https://rcsvl.ru/images/files_site/catalog/zatirka/disc-koman.png', title: 'Диск затирочный 25" для MT24',         price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Диск затирочный 25" (635мм) для KOMAN MT24.' },
+  { id: 250, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: '/catalog/machinery/PT900D.webp', title: 'Затирочная машина GIKS PT900D',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Профессиональная затирочная машина GIKS PT900D. Диаметр ∅900мм, двигатель Honda GX690, 4 лопасти.' },
+  { id: 251, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: '/catalog/machinery/PT600H.webp', title: 'Затирочная машина GIKS PT600H',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина GIKS PT600H. Диаметр ∅600мм, двигатель Honda GX200, 4 лопасти.' },
+  { id: 252, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: '/catalog/machinery/PT600D.webp', title: 'Затирочная машина GIKS PT600D',       price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина GIKS PT600D. Диаметр ∅600мм, двигатель Dunfeng, 4 лопасти.' },
+  { id: 253, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: '/catalog/machinery/mt-364-1.webp', title: 'Затирочная машина KOMAN MT36-4 ST',  price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина KOMAN MT36-4 ST. Диаметр ∅900мм, Honda GX390, 4 лопасти, электростартер.' },
+  { id: 254, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: '/catalog/machinery/mt-364-1.webp', title: 'Затирочная машина KOMAN MT36-4',     price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина KOMAN MT36-4. Диаметр ∅900мм, Loncin/Honda GX390, 4 лопасти.' },
+  { id: 255, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: null, title: 'Затирочная машина KOMAN MRT73',      price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Двухроторная затирочная машина KOMAN MRT73. Рабочая ширина ∅1800мм. Для больших площадей.' },
+  { id: 256, category: 'machinery', sub: 'trowel', icon: '⚙️', photo: '/catalog/machinery/mt-36-2.webp', title: 'Затирочная машина KOMAN MT36-2ST',   price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Затирочная машина KOMAN MT36-2ST. Диаметр ∅900мм, 2 лопасти, электростартер.' },
+  { id: 257, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: null, title: 'Лопасти 6"×14" комб. для MT36/MRT73',  price: 'Уточнить', basePrice: null, unit: 'компл', description: 'Лопасти комбинированные 6"×14" для затирочных машин KOMAN MT36 и MRT73.' },
+  { id: 258, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: null, title: 'Диск затирочный 37" для MT36/MRT73',  price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Диск затирочный 37" (940мм) для KOMAN MT36 и MRT73.' },
+  { id: 259, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: '/catalog/machinery/disc-koman.png', title: 'Диск затирочный 31" для MT30',         price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Диск затирочный 31" (785мм) для KOMAN MT30.' },
+  { id: 260, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: null, title: 'Лопасти 4.75"×9" комб. для MT24',      price: 'Уточнить', basePrice: null, unit: 'компл', description: 'Лопасти комбинированные 4.75"×9" для затирочной машины KOMAN MT24.' },
+  { id: 261, category: 'machinery', sub: 'mach_parts', icon: '🔩', photo: '/catalog/machinery/disc-koman.png', title: 'Диск затирочный 25" для MT24',         price: 'Уточнить', basePrice: null, unit: 'шт', description: 'Диск затирочный 25" (635мм) для KOMAN MT24.' },
 
   // ─── УСЛУГИ ───────────────────────────────────────────────────
   { id: 154, category: 'services', icon: '🔩', title: 'Установка забора под ключ',           price: 'Уточнить', basePrice: null, unit: 'м.п.', description: 'Монтаж забора любого типа под ключ. Столбы в бетон.' },
@@ -458,4 +458,9 @@ export const items = [
   { id: 158, category: 'services', icon: '🚜', title: 'Экскаватор с оператором',             price: 'Уточнить', basePrice: null, unit: 'час', description: 'Земляные работы. Собственная техника без аренды.' },
   { id: 159, category: 'services', icon: '🚛', title: 'Самосвал',                            price: 'Уточнить', basePrice: null, unit: 'рейс', description: 'Вывоз грунта, доставка материалов. Собственный парк.' },
 ]
+
+// ── Каталог Сигнал (signaldv.ru) — 2213 товаров, автоген. import хойстится наверх ──
+import { sigCategories, sigItems } from './catalog-sig.js'
+categories.push(...sigCategories)
+items.push(...sigItems)
 

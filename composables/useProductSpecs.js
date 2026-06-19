@@ -748,6 +748,8 @@ export const catDescriptions = {
 
 export function getProductSpecs(item) {
   if (!item) return []
+  // Готовые характеристики из источника (товары Сигнала)
+  if (item.specs && item.specs.length) return item.specs
   const base = []
   if (item.sku)  base.push({ label: 'Артикул', value: item.sku })
   if (item.unit) base.push({ label: 'Ед. измерения', value: item.unit })

@@ -4,31 +4,23 @@
     <HeroSection />
     <AboutSection />
     <ServicesSection />
+    <TrustSection />
+    <CtaBanner />
     <GallerySection />
     <ReviewsSection />
+    <CtaBanner />
     <MapSection />
     <ContactForm />
 
-    <footer class="footer">
-      <div class="footer__inner">
-        <p class="footer__name">ДСР — Дальневосточные Системы Развития</p>
-        <p class="footer__contacts">
-          г. Владивосток, ул. Русская, д. 17, каб. 704 &nbsp;|&nbsp;
-          <a href="tel:+79143292929">+7 914 329-29-29</a> &nbsp;|&nbsp;
-          <a href="https://e.mail.ru/compose/?to=ooo-dsr@bk.ru" target="_blank" rel="noopener">ooo-dsr@bk.ru</a>
-        </p>
-        <p class="footer__copy">© {{ new Date().getFullYear() }} ДСР. Все права защищены.</p>
-      </div>
-    </footer>
   </main>
 </template>
 
 <script setup>
-useHead({ title: 'ДСР — Дальневосточные Системы Развития | Владивосток' })
+useHead({ title: 'Заборы 3D, сваи, септики — снабжение и монтаж во Владивостоке | ДСР' })
 useSeoMeta({
-  description: 'ООО ДСР — строительные материалы, трубопроводная арматура, металлопрокат, септики, заборы 3D, сваи и оборудование во Владивостоке. Более 2300 позиций в каталоге.',
-  ogTitle: 'ДСР — Дальневосточные Системы Развития',
-  ogDescription: 'Строительные материалы и оборудование во Владивостоке. Более 2300 позиций. Звоните: +7 914 329-29-29',
+  description: 'ООО ДСР, Владивосток: заборы 3D, винтовые и лопастные сваи, септики, кессоны, погреба, стройматериалы. Снабжение объектов, поставка и монтаж под ключ по Владивостоку и Приморскому краю. Прямые поставки. ☎ +7 914 329-29-29',
+  ogTitle: 'ДСР — заборы, сваи, септики, снабжение и монтаж во Владивостоке',
+  ogDescription: 'Заборы 3D, винтовые сваи, септики, стройматериалы. Снабжение объектов, поставка и монтаж под ключ. Владивосток и Приморский край. ☎ +7 914 329-29-29',
   ogImage: 'https://dvsr-site.vercel.app/og-dsr.jpg',
   ogUrl: 'https://dvsr-site.vercel.app',
   twitterCard: 'summary_large_image',

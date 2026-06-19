@@ -20,18 +20,18 @@
           <!-- Галерея -->
           <div class="pp__gallery">
             <div class="pp__gallery-main">
-              <template v-if="item.photos && item.photos.length > 1">
+              <template v-if="galleryPhotos.length > 1">
                 <transition name="pp-photo" mode="out-in">
-                  <img :key="photoIdx" :src="item.photos[photoIdx]" :alt="item.title" class="pp__img" />
+                  <img :key="photoIdx" :src="galleryPhotos[photoIdx]" :alt="item.title" class="pp__img" @error="onPhotoError(galleryPhotos[photoIdx])" />
                 </transition>
-                <button class="pp__prev" @click="photoIdx = (photoIdx - 1 + item.photos.length) % item.photos.length">
+                <button class="pp__prev" @click="photoIdx = (photoIdx - 1 + galleryPhotos.length) % galleryPhotos.length">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M15 18l-6-6 6-6"/></svg>
                 </button>
-                <button class="pp__next" @click="photoIdx = (photoIdx + 1) % item.photos.length">
+                <button class="pp__next" @click="photoIdx = (photoIdx + 1) % galleryPhotos.length">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M9 18l6-6-6-6"/></svg>
                 </button>
               </template>
-              <img v-else-if="item.photo || item.photos?.[0]" :src="item.photo || item.photos[0]" :alt="item.title" class="pp__img" />
+              <img v-else-if="galleryPhotos.length === 1" :src="galleryPhotos[0]" :alt="item.title" class="pp__img" @error="onPhotoError(galleryPhotos[0])" />
               <div v-else class="pp__no-img">
                 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1" d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/></svg>
                 <span>Фото скоро</span>
@@ -39,11 +39,11 @@
             </div>
 
             <!-- Миниатюры -->
-            <div v-if="item.photos && item.photos.length > 1" class="pp__thumbs">
-              <button v-for="(ph, i) in item.photos" :key="i"
+            <div v-if="galleryPhotos.length > 1" class="pp__thumbs">
+              <button v-for="(ph, i) in galleryPhotos" :key="ph"
                 class="pp__thumb" :class="{ active: i === photoIdx }"
                 @click="photoIdx = i">
-                <img :src="ph" :alt="`${item.title} ${i+1}`" />
+                <img :src="ph" :alt="`${item.title} ${i+1}`" @error="onPhotoError(ph)" />
               </button>
             </div>
           </div>
@@ -54,6 +54,11 @@
             <h1 class="pp__title">{{ item.title }}</h1>
 
             <p class="pp__short-desc">{{ item.description }}</p>
+
+            <div class="pp__price-row">
+              <span class="pp__price" :class="{ 'pp__price--ask': !priceFrom(item) }">{{ priceFrom(item) || 'Уточнить актуальную цену' }}</span>
+              <span class="pp__price-note">{{ PRICE_DISCLAIMER }}</span>
+            </div>
 
             <!-- Мета -->
             <div v-if="item.sku || item.unit" class="pp__meta">
@@ -211,13 +216,6 @@
         </div>
       </section>
 
-      <footer class="pp-footer">
-        <div class="pp-footer__inner">
-          <p>ДСР — Дальневосточные Системы Развития</p>
-          <p>г. Владивосток, ул. Русская, д. 17 &nbsp;|&nbsp; <a href="tel:+79143292929">+7 914 329-29-29</a></p>
-          <p>© {{ new Date().getFullYear() }} ДСР. Все права защищены.</p>
-        </div>
-      </footer>
     </main>
 
     <!-- 404 -->
@@ -306,6 +304,7 @@
 import { categories, items as staticItems } from '~/data/catalog.js'
 import { phoneMask } from '~/composables/usePhoneMask.js'
 import { getProductSpecs, getProductAdvantages, getProductCatDesc } from '~/composables/useProductSpecs.js'
+import { priceFrom, sellPrice, PRICE_DISCLAIMER } from '~/composables/usePrice.js'
 const { addItem, hasItem } = useCart()
 
 const route = useRoute()
@@ -325,9 +324,53 @@ useHead({ title: item.value ? `${item.value.title} — купить во Вла�
 useSeoMeta({
   description: item.value ? (item.value.description || `Купить ${item.value.title} во Владивостоке. ООО ДСР — строительные материалы и оборудование.`).slice(0, 160) : 'Страница товара не найдена.',
   ogTitle: item.value ? `${item.value.title} — ДСР Владивосток` : 'ДСР',
-  ogImage: item.value?.photo || item.value?.photos?.[0] || 'https://dvsr-site.vercel.app/og-dsr.jpg',
+  ogImage: `https://dvsr-site.vercel.app/catalog/products/${itemId}.jpg`,
   ogUrl: `https://dvsr-site.vercel.app/catalog/${itemId}`,
   twitterCard: 'summary_large_image',
+})
+
+// SEO: разметка товара (Product + Offer) и хлебные крошки
+const SITE = 'https://dvsr-site.vercel.app'
+useHead(() => {
+  const it = item.value
+  if (!it) return {}
+  const price = sellPrice(it.basePrice)
+  const product = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: it.title,
+    description: (it.description || it.title),
+    image: `${SITE}/catalog/products/${it.id}.jpg`,
+    sku: it.sku || String(it.id),
+    category: categoryMap[it.category] || 'Каталог',
+    brand: { '@type': 'Brand', name: 'ДСР' },
+    ...(price ? {
+      offers: {
+        '@type': 'Offer',
+        price,
+        priceCurrency: 'RUB',
+        availability: 'https://schema.org/InStock',
+        url: `${SITE}/catalog/${it.id}`,
+        seller: { '@type': 'Organization', name: 'ДСР — Дальневосточные Системы Развития' },
+      },
+    } : {}),
+  }
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: SITE },
+      { '@type': 'ListItem', position: 2, name: 'Каталог', item: `${SITE}/catalog` },
+      { '@type': 'ListItem', position: 3, name: categoryMap[it.category] || 'Категория', item: `${SITE}/catalog?cat=${it.category}` },
+      { '@type': 'ListItem', position: 4, name: it.title, item: `${SITE}/catalog/${it.id}` },
+    ],
+  }
+  return {
+    script: [
+      { type: 'application/ld+json', innerHTML: JSON.stringify(product) },
+      { type: 'application/ld+json', innerHTML: JSON.stringify(breadcrumb) },
+    ],
+  }
 })
 
 const relatedItems = computed(() => {
@@ -336,6 +379,31 @@ const relatedItems = computed(() => {
 })
 
 const photoIdx = ref(0)
+
+// Фото как в каталоге: для одиночных — /catalog/products/{id}.jpg первым (с откатом на фото из данных),
+// для многофото — карусель из данных (как в списке). failedPhotos убирает то, что не загрузилось.
+const failedPhotos = reactive(new Set())
+const galleryPhotos = computed(() => {
+  if (!item.value) return []
+  if (item.value.photos && item.value.photos.length > 1) {
+    return item.value.photos.filter(p => p && !failedPhotos.has(p))
+  }
+  // Внешнее фото (CDN Сигнала) — используем напрямую, без попытки products/{id}.jpg
+  if (item.value.photo && /^https?:/.test(item.value.photo)) {
+    return [item.value.photo].filter(p => !failedPhotos.has(p))
+  }
+  const catalogPhoto = `/catalog/products/${item.value.id}.jpg`
+  if (!failedPhotos.has(catalogPhoto)) return [catalogPhoto]
+  const dataPhoto = item.value.photo || item.value.photos?.[0] || null
+  if (dataPhoto && !failedPhotos.has(dataPhoto)) return [dataPhoto]
+  return []
+})
+function onPhotoError(src) {
+  if (!src) return
+  failedPhotos.add(src)
+  if (photoIdx.value >= galleryPhotos.value.length) photoIdx.value = 0
+}
+
 const loading  = ref(false)
 const orderSuccess = ref(false)
 const orderOpen = ref(false)
@@ -448,6 +516,11 @@ async function submitOrder() {
 .pp__title { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 800; color: #fff; line-height: 1.2; margin: 0; }
 
 .pp__short-desc { color: #888; font-size: 0.925rem; line-height: 1.7; margin: 0; }
+
+.pp__price-row { display: flex; flex-direction: column; gap: 0.3rem; }
+.pp__price { font-size: 1.6rem; font-weight: 800; color: #e6b800; line-height: 1; }
+.pp__price--ask { font-size: 1.1rem; font-weight: 700; color: #999; }
+.pp__price-note { font-size: 0.72rem; color: #555; line-height: 1.4; }
 
 .pp__meta { background: rgba(255,255,255,0.025); border: 1px solid #1e1e1e; border-radius: 10px; padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
 .pp__meta-row { display: flex; gap: 0.75rem; font-size: 0.83rem; }

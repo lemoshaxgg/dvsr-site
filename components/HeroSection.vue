@@ -12,6 +12,11 @@
         <DsrLogo size="lg" />
       </div>
 
+      <div class="hero__kicker hero__anim" style="animation-delay:0.18s">
+        <span class="hero__kicker-dot"></span>
+        Владивосток · Приморский край · с 2015 года
+      </div>
+
       <h1 class="hero__title hero__anim" style="animation-delay:0.25s">
         Дальневосточные<br />
         <span class="text-shimmer">Системы Развития</span>
@@ -34,7 +39,7 @@
             class="hero__search-input"
             placeholder="Найти услугу или товар..."
             autocomplete="off"
-            @focus="showSuggestions = true"
+            @focus="showSuggestions = true; loadDynamicItems()"
           />
           <button v-if="query" type="button" class="hero__search-clear" @click="query = ''">✕</button>
           <button type="submit" class="hero__search-btn btn-shimmer">Найти</button>
@@ -45,10 +50,12 @@
             <a
               v-for="item in suggestions"
               :key="item.id"
-              :href="`/catalog?search=${encodeURIComponent(item.title)}`"
+              :href="`/catalog/${item.id}`"
               class="hero__suggestion-item"
             >
-              <span class="hero__suggestion-icon">{{ item.icon }}</span>
+              <span class="hero__suggestion-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
+              </span>
               <span class="hero__suggestion-info">
                 <span class="hero__suggestion-title">{{ item.title }}</span>
                 <span class="hero__suggestion-cat">{{ item.categoryLabel }}</span>
@@ -92,19 +99,34 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { catalogItems } from '~/composables/useCatalogItems.js'
+import { items as staticCatalog, categories } from '~/data/catalog.js'
 
 defineProps({ logoSrc: { type: String, default: null } })
 
 const query = ref('')
 const showSuggestions = ref(false)
 
+const categoryLabelMap = Object.fromEntries(categories.map(c => [c.id, c.label]))
+
+// Поиск по всему ассортименту: статичный каталог сразу + полный список дозагружаем при фокусе
+const allItems = ref([...staticCatalog])
+let loadedDynamic = false
+async function loadDynamicItems() {
+  if (loadedDynamic) return
+  loadedDynamic = true
+  try {
+    const data = await $fetch('/data/catalog-items.json')
+    if (Array.isArray(data) && data.length) allItems.value = [...staticCatalog, ...data]
+  } catch { /* остаёмся на статичном списке */ }
+}
+
 const suggestions = computed(() => {
-  if (!query.value.trim()) return []
-  const q = query.value.toLowerCase()
-  return catalogItems
-    .filter(i => i.title.toLowerCase().includes(q) || i.categoryLabel.toLowerCase().includes(q))
+  const q = query.value.trim().toLowerCase()
+  if (!q) return []
+  return allItems.value
+    .filter(i => i.title.toLowerCase().includes(q) || (i.description && i.description.toLowerCase().includes(q)))
     .slice(0, 6)
+    .map(i => ({ id: i.id, title: i.title, categoryLabel: categoryLabelMap[i.category] || 'Каталог' }))
 })
 
 function goSearch() {
@@ -234,6 +256,18 @@ onMounted(() => {
   overflow: hidden;
 }
 
+/* Светящаяся линия-горизонт внизу hero */
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(230,184,0,0.55), transparent);
+  box-shadow: 0 0 26px 2px rgba(230,184,0,0.22);
+  pointer-events: none;
+  z-index: 2;
+}
+
 /* ── Орбы ── */
 .hero__orb {
   position: absolute;
@@ -284,6 +318,30 @@ onMounted(() => {
   pointer-events: none;
 }
 
+/* ── Кикер-чип ── */
+.hero__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #b9b9b9;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+}
+.hero__kicker-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold);
+  animation: glow-pulse 2.4s ease-in-out infinite;
+}
+
 .hero__content {
   position: relative;
   z-index: 1;
@@ -298,11 +356,13 @@ onMounted(() => {
 }
 
 .hero__title {
-  font-size: clamp(2rem, 5vw, 3.6rem);
-  font-weight: 800;
-  line-height: 1.2;
+  font-family: 'Space Grotesk', 'Montserrat', sans-serif;
+  font-size: clamp(2.1rem, 5.4vw, 3.9rem);
+  font-weight: 700;
+  line-height: 1.08;
   color: #fff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.035em;
+  text-shadow: 0 2px 40px rgba(0,0,0,0.5);
 }
 
 .hero__subtitle {
@@ -382,7 +442,7 @@ onMounted(() => {
   transition: background 0.15s;
 }
 .hero__suggestion-item:hover { background: rgba(230,184,0,0.07); }
-.hero__suggestion-icon { font-size: 1.2rem; flex-shrink: 0; }
+.hero__suggestion-icon { flex-shrink: 0; color: #e6b800; display: flex; align-items: center; }
 .hero__suggestion-info { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
 .hero__suggestion-title { font-size: 0.875rem; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hero__suggestion-cat { font-size: 0.72rem; color: #555; }
@@ -414,7 +474,8 @@ onMounted(() => {
   padding: 0 1.5rem;
 }
 .hero__stat-num {
-  font-size: 1.1rem; font-weight: 800; color: #e6b800; line-height: 1;
+  font-family: 'Space Grotesk', 'Montserrat', sans-serif;
+  font-size: 1.2rem; font-weight: 700; color: #e6b800; line-height: 1; letter-spacing: -0.02em;
 }
 .hero__stat-label {
   font-size: 0.63rem; color: #555; text-transform: uppercase; letter-spacing: 0.08em;

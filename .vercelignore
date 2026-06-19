@@ -1,0 +1,14 @@
+# Артефакты, которые Vercel пересобирает сам — незачем загружать
+.output
+.nuxt
+node_modules
+dist
+
+# Локальный мусор
+*.log
+.DS_Store
+
+# Dev-артефакты/черновики (не нужны в деплое; robots.txt в public НЕ трогаем)
+ФОТО_ТОВАРЫ.txt
+data/catalog_import.txt
+data/catalog_import2.txt

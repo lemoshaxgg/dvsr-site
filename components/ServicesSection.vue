@@ -14,12 +14,15 @@
           v-for="(s, i) in services"
           :key="s.id"
           :href="`/catalog?cat=${s.id}`"
-          class="svc-card"
+          class="svc-card grad-border"
           data-reveal="scale"
           :data-delay="String(i + 1)"
         >
           <div class="svc-card__glow"></div>
-          <div class="svc-card__icon">{{ s.icon }}</div>
+          <span class="svc-card__index">{{ String(i + 1).padStart(2, '0') }}</span>
+          <div class="svc-card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="26" height="26" v-html="icons[s.id]"></svg>
+          </div>
           <div class="svc-card__body">
             <h3 class="svc-card__title">{{ s.title }}</h3>
             <p class="svc-card__desc">{{ s.desc }}</p>
@@ -50,6 +53,16 @@
 <script setup>
 import { useScrollReveal } from '~/composables/useScrollReveal'
 useScrollReveal()
+
+// Чистые line-иконки (lucide-style) под каждое направление
+const icons = {
+  fence3d: '<path d="M3 8h18M3 14h18M7 4v17M12 4v17M17 4v17"/>',
+  piles: '<path d="M12 3v12"/><path d="M8 6h8M8 9h8M8 12h8"/><path d="M9 15l3 6 3-6"/>',
+  septic: '<path d="M12 3c4 5 6 7.6 6 11a6 6 0 1 1-12 0c0-3.4 2-6 6-11z"/><path d="M9 14a3 3 0 0 0 3 3"/>',
+  metalroll: '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17l9 5 9-5"/>',
+  pipe: '<path d="M14.6 4.6a4 4 0 0 0-5.3 5.3L3 16.2V21h4.8l6.3-6.3a4 4 0 0 0 5.3-5.3l-2.8 2.8-2.5-2.5 2.8-2.8z"/>',
+  tanks: '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v14c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+}
 
 const services = [
   {
@@ -117,6 +130,8 @@ const services = [
 .services__container {
   max-width: 1100px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 .services__badge {
@@ -132,9 +147,13 @@ const services = [
 }
 
 .services__title {
-  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
-  font-weight: 700; color: #fff;
+  font-size: clamp(1.9rem, 4.2vw, 3rem);
+  font-weight: 700;
   margin-bottom: 0.6rem;
+  background: linear-gradient(118deg, #ffffff 0%, #ffe9a3 58%, #e6b800 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .services__desc {
@@ -189,12 +208,32 @@ const services = [
 .svc-card:hover .svc-card__glow { opacity: 1; }
 
 .svc-card__icon {
-  font-size: 2.25rem;
-  line-height: 1;
-  filter: drop-shadow(0 2px 8px rgba(230,184,0,0.25));
-  transition: transform 0.3s;
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 14px;
+  color: #e6b800;
+  background: linear-gradient(150deg, rgba(245,200,66,0.14), rgba(230,184,0,0.04));
+  border: 1px solid rgba(230,184,0,0.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 18px rgba(230,184,0,0.10);
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s, border-color 0.35s;
 }
-.svc-card:hover .svc-card__icon { transform: scale(1.15) rotate(-5deg); }
+.svc-card:hover .svc-card__icon {
+  transform: translateY(-3px);
+  border-color: rgba(230,184,0,0.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 26px rgba(230,184,0,0.22);
+}
+
+.svc-card__index {
+  position: absolute;
+  top: 1.1rem; right: 1.2rem;
+  font-family: 'Space Grotesk', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2e2e2e;
+  letter-spacing: 0.05em;
+  transition: color 0.3s;
+}
+.svc-card:hover .svc-card__index { color: rgba(230,184,0,0.55); }
 
 .svc-card__body { flex: 1; }
 

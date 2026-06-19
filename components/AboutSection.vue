@@ -27,28 +27,28 @@
 
         <!-- Счётчики с анимацией -->
         <div class="about__stats" ref="statsRef">
-          <div class="about__stat" data-reveal="scale" data-delay="1">
+          <div class="about__stat grad-border" data-reveal="scale" data-delay="1">
             <div class="about__stat-glow"></div>
             <span class="about__stat-num">
               <span ref="c1" class="about__stat-count">10</span>+
             </span>
             <span class="about__stat-label">лет на рынке</span>
           </div>
-          <div class="about__stat" data-reveal="scale" data-delay="2">
+          <div class="about__stat grad-border" data-reveal="scale" data-delay="2">
             <div class="about__stat-glow"></div>
             <span class="about__stat-num">
               <span ref="c2" class="about__stat-count">2300</span>+
             </span>
             <span class="about__stat-label">позиций в каталоге</span>
           </div>
-          <div class="about__stat" data-reveal="scale" data-delay="3">
+          <div class="about__stat grad-border" data-reveal="scale" data-delay="3">
             <div class="about__stat-glow"></div>
             <span class="about__stat-num">
               <span ref="c3" class="about__stat-count">500</span>+
             </span>
             <span class="about__stat-label">выполненных заказов</span>
           </div>
-          <div class="about__stat" data-reveal="scale" data-delay="4">
+          <div class="about__stat grad-border" data-reveal="scale" data-delay="4">
             <div class="about__stat-glow"></div>
             <span class="about__stat-num">
               <span ref="c4" class="about__stat-count">4</span>
@@ -136,10 +136,14 @@ onMounted(() => {
 }
 
 .about__title {
-  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
-  font-weight: 700; color: #fff; margin-bottom: 0.5rem;
+  font-size: clamp(1.9rem, 4.2vw, 3rem);
+  font-weight: 700; margin-bottom: 0.5rem;
+  background: linear-gradient(118deg, #ffffff 0%, #ffe9a3 58%, #e6b800 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-.about__title-accent { color: #e6b800; }
+.about__title-accent { color: #e6b800; -webkit-text-fill-color: #e6b800; }
 
 .about__tagline {
   font-size: 0.95rem; color: #555;
@@ -217,11 +221,12 @@ onMounted(() => {
 .about__stat:hover .about__stat-glow { opacity: 1; }
 
 .about__stat-num {
-  font-size: 2.2rem;
-  font-weight: 800;
+  font-family: 'Space Grotesk', 'Montserrat', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
   color: #e6b800;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
 }
 .about__stat-count { display: inline; }
 

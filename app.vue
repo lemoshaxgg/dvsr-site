@@ -19,10 +19,26 @@
       </div>
     </Transition>
 
+    <!-- Скелетон при переходах между страницами -->
+    <Transition name="skeleton-fade">
+      <div v-if="routeLoading" class="route-skeleton">
+        <div class="route-skeleton__inner">
+          <div class="sk sk-badge"></div>
+          <div class="sk sk-title"></div>
+          <div class="sk sk-sub"></div>
+          <div class="route-skeleton__grid">
+            <div class="sk sk-card" v-for="n in 6" :key="n"></div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- NavBar живёт вне transition — никогда не мигает -->
     <NavBar />
 
     <NuxtPage />
+    <SiteFooter />
+    <CookieBanner />
     <TelegramBtn />
     <WhatsAppBtn />
 
@@ -178,6 +194,12 @@
                     </span>
                   </transition>
                 </button>
+                <p class="cart-consent">
+                  Нажимая «Отправить запрос», вы соглашаетесь с
+                  <a href="/consent" target="_blank">обработкой персональных данных</a>
+                  и
+                  <a href="/privacy" target="_blank">Политикой конфиденциальности</a>.
+                </p>
                 <transition name="cart-success">
                   <p v-if="cartSuccess" class="cart-success">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24">
@@ -201,6 +223,51 @@ import { phoneMask } from '~/composables/usePhoneMask.js'
 
 const { cartItems, drawerOpen, removeItem, setQuantity, clearCart, count } = useCart()
 
+// ── SEO: структурированная разметка Schema.org (сайтовая) ──
+const SITE = 'https://dvsr-site.vercel.app'
+const businessLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Store',
+  '@id': SITE + '/#business',
+  name: 'ДСР — Дальневосточные Системы Развития',
+  description: 'Снабжение, поставка и монтаж: заборы 3D, винтовые сваи, септики, кессоны, стройматериалы. Владивосток и Приморский край.',
+  url: SITE,
+  telephone: '+79143292929',
+  email: 'ooo-dsr@bk.ru',
+  image: SITE + '/og-dsr.jpg',
+  priceRange: '₽₽',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'ул. Русская, д. 17, каб. 704',
+    addressLocality: 'Владивосток',
+    addressRegion: 'Приморский край',
+    addressCountry: 'RU',
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: 43.133645, longitude: 131.94008 },
+  areaServed: [
+    { '@type': 'City', name: 'Владивосток' },
+    { '@type': 'AdministrativeArea', name: 'Приморский край' },
+  ],
+  sameAs: ['https://t.me/dsr2025'],
+}
+const websiteLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  url: SITE,
+  name: 'ДСР — Дальневосточные Системы Развития',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: SITE + '/catalog?search={search_term_string}',
+    'query-input': 'required name=search_term_string',
+  },
+}
+useHead({
+  script: [
+    { type: 'application/ld+json', innerHTML: JSON.stringify(businessLd) },
+    { type: 'application/ld+json', innerHTML: JSON.stringify(websiteLd) },
+  ],
+})
+
 // Boot-экран: показываем 600ms при первом посещении
 const booting = ref(false)
 onMounted(() => {
@@ -209,6 +276,32 @@ onMounted(() => {
     sessionStorage.setItem('dsr-booted', '1')
     setTimeout(() => { booting.value = false }, 900)
   }
+})
+
+// Скелетон при переходах между страницами (только если переход дольше ~120ms — без мигания)
+const routeLoading = ref(false)
+const nuxtApp = useNuxtApp()
+const router = useRouter()
+let navTimer = null
+let lastPath = router.currentRoute.value.path
+nuxtApp.hook('page:start', () => {
+  clearTimeout(navTimer)
+  navTimer = setTimeout(() => { routeLoading.value = true }, 120)
+})
+nuxtApp.hook('page:finish', () => {
+  clearTimeout(navTimer)
+  routeLoading.value = false
+  // Мгновенный скролл наверх при смене пути (фикс мобилы: товар не открывается «внизу»).
+  // behavior:auto в обход глобального scroll-behavior:smooth — иначе гонка с out-in переходом.
+  const path = router.currentRoute.value.path
+  if (path !== lastPath && !window.location.hash) {
+    const html = document.documentElement
+    const prev = html.style.scrollBehavior
+    html.style.scrollBehavior = 'auto'
+    window.scrollTo(0, 0)
+    html.style.scrollBehavior = prev
+  }
+  lastPath = path
 })
 
 const showBackTop = ref(false)
@@ -273,25 +366,34 @@ async function submitCart() {
 /* ── Кнопка Наверх ── */
 .back-top {
   position: fixed;
-  bottom: 13rem;
+  bottom: calc(8rem + 58px + 14px);
   right: 2rem;
   z-index: 89;
-  width: 40px;
-  height: 40px;
-  background: rgba(26,26,26,0.9);
-  border: 1px solid #2a2a2a;
+  width: 52px;
+  height: 52px;
+  background: rgba(18,18,18,0.92);
+  border: 1px solid #333;
   border-radius: 50%;
-  color: #666;
+  color: #888;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(8px);
-  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
-.back-top:hover { background: #e6b800; color: #000; border-color: #e6b800; transform: translateY(-3px); }
+.back-top:hover {
+  background: #e6b800;
+  color: #000;
+  border-color: #e6b800;
+  box-shadow: 0 6px 24px rgba(230,184,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+}
 .back-top-enter-active, .back-top-leave-active { transition: opacity 0.2s, transform 0.2s; }
 .back-top-enter-from, .back-top-leave-to { opacity: 0; transform: translateY(8px); }
+@media (max-width: 480px) {
+  .back-top { bottom: calc(6.75rem + 52px + 12px); right: 1.25rem; width: 46px; height: 46px; }
+}
 
 /* ── FAB корзины ── */
 .cart-fab {
@@ -739,6 +841,16 @@ async function submitCart() {
 .submit-text-enter-active, .submit-text-leave-active { transition: opacity 0.15s; }
 .submit-text-enter-from, .submit-text-leave-to { opacity: 0; }
 
+.cart-consent {
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: #555;
+  margin: 0;
+  text-align: center;
+}
+.cart-consent a { color: #888; text-decoration: underline; }
+.cart-consent a:hover { color: #e6b800; }
+
 .cart-success {
   display: flex;
   align-items: center;
@@ -834,4 +946,56 @@ async function submitCart() {
 .app-boot-leave-active { transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.4, 0, 1, 1); }
 .app-boot-enter-from  { opacity: 0; }
 .app-boot-leave-to    { opacity: 0; transform: scale(1.04); }
+
+/* ── Скелетон при переходах между страницами ── */
+.route-skeleton {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #0a0a0a;
+  padding: 110px 1.5rem 2rem;
+  overflow: hidden;
+}
+.route-skeleton__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.sk {
+  position: relative;
+  overflow: hidden;
+  background: #141414;
+  border: 1px solid #1b1b1b;
+  border-radius: 12px;
+}
+.sk::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(230,184,0,0.10), rgba(255,255,255,0.05), transparent);
+  animation: sk-shimmer 1.25s ease-in-out infinite;
+}
+@keyframes sk-shimmer { 100% { transform: translateX(100%); } }
+.sk-badge { width: 120px; height: 26px; border-radius: 999px; }
+.sk-title { width: min(62%, 440px); height: 44px; }
+.sk-sub   { width: min(82%, 640px); height: 18px; margin-bottom: 1.25rem; }
+.route-skeleton__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+.sk-card { height: 190px; }
+@media (max-width: 900px) { .route-skeleton__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 580px) {
+  .route-skeleton { padding-top: 90px; }
+  .route-skeleton__grid { grid-template-columns: 1fr; }
+}
+
+/* skeleton transition */
+.skeleton-fade-enter-active { transition: opacity 0.15s ease; }
+.skeleton-fade-leave-active { transition: opacity 0.3s ease; }
+.skeleton-fade-enter-from, .skeleton-fade-leave-to { opacity: 0; }
 </style>

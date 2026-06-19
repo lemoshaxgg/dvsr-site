@@ -1,5 +1,48 @@
+// Content-Security-Policy под реальные ресурсы сайта (Метрика, Google Fonts, Яндекс.Карта, внешние фото товаров)
+const csp = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "script-src 'self' 'unsafe-inline' https://mc.yandex.ru",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "img-src 'self' data: https:",
+  "connect-src 'self' https://mc.yandex.ru",
+  "frame-src https://yandex.ru https://*.yandex.ru https://mc.yandex.ru",
+  "upgrade-insecure-requests",
+].join('; ')
+
+const securityHeaders = {
+  'Content-Security-Policy': csp,
+  'X-Frame-Options': 'SAMEORIGIN',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+  'X-Powered-By': '',
+}
+
 export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
+  nitro: {
+    experimental: {
+      openAPI: true,
+    },
+    openAPI: {
+      meta: {
+        title: 'ДСР API',
+        description: 'API сайта «Дальневосточные Системы Развития» — приём заявок с форм.',
+        version: '1.0.0',
+      },
+      // Не публиковать OpenAPI/Swagger/Scalar в проде (закрытие /_openapi.json, /_scalar, /_swagger)
+      production: false,
+    },
+  },
+  // Заголовки безопасности на все маршруты
+  routeRules: {
+    '/**': { headers: securityHeaders },
+  },
   runtimeConfig: {
     public: {
       metrikaId: process.env.NUXT_PUBLIC_METRIKA_ID || '',
@@ -16,7 +59,8 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap' }
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap' }
       ]
     }
   }

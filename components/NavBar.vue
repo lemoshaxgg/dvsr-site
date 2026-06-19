@@ -12,7 +12,7 @@
         <a href="/blog" class="navbar__link navbar__link--pill">Блог</a>
 
         <!-- Каталог с дропдауном -->
-        <div class="navbar__dropdown-wrap" @mouseenter="dropOpen = true" @mouseleave="dropOpen = false">
+        <div class="navbar__dropdown-wrap" @mouseenter="openDrop" @mouseleave="closeDrop">
           <a href="/catalog" class="navbar__link navbar__link--pill navbar__link--active">
             Каталог
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" class="navbar__drop-arrow" :class="{ rotated: dropOpen }">
@@ -43,7 +43,7 @@
         </button>
 
         <!-- Связаться — дропдаун контактов -->
-        <div class="navbar__contact-wrap" @mouseenter="contactOpen = true" @mouseleave="contactOpen = false">
+        <div class="navbar__contact-wrap" @mouseenter="openContact" @mouseleave="closeContact">
           <button class="navbar__link navbar__link--cta navbar__contact-btn">
             Связаться
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24"
@@ -170,6 +170,14 @@ const scrolled     = ref(false)
 const dropOpen     = ref(false)
 const catalogOpen  = ref(false)
 const contactOpen  = ref(false)
+
+// Выпадайки: задержка закрытия, чтобы успеть довести курсор до панели
+let dropTimer = null
+function openDrop()     { clearTimeout(dropTimer); dropOpen.value = true }
+function closeDrop()    { dropTimer = setTimeout(() => { dropOpen.value = false }, 180) }
+let contactTimer = null
+function openContact()  { clearTimeout(contactTimer); contactOpen.value = true }
+function closeContact() { contactTimer = setTimeout(() => { contactOpen.value = false }, 180) }
 
 const { count: cartCount, drawerOpen } = useCart()
 function openDrawer() { drawerOpen.value = true }
@@ -353,13 +361,25 @@ const categories = [
 }
 
 .navbar__link--cta:hover {
-  background: #e6b800;
+  background: linear-gradient(135deg, #f5c842 0%, #e6b800 50%, #c9a000 100%);
   color: #0a0a0a;
+  box-shadow: 0 4px 16px rgba(230,184,0,0.35);
 }
 
 /* Дропдаун */
 .navbar__dropdown-wrap {
   position: relative;
+}
+
+/* Невидимый «мостик» между кнопкой и панелью — чтобы выпадайка не закрывалась при наведении на неё */
+.navbar__dropdown::before,
+.navbar__contact-drop::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: -14px;
+  height: 16px;
 }
 
 .navbar__dropdown {
@@ -518,8 +538,9 @@ const categories = [
 }
 .navbar__mobile-sub:hover { background: rgba(230,184,0,0.08); color: #e6b800; }
 
-.navbar__mobile-link--promo { color: #ff9f43; }
-.navbar__mobile-link--promo:hover { color: #ffcc70; }
+/* «Акции» — единообразно с остальными пунктами меню */
+.navbar__mobile-link--promo { color: #c0c0c0; }
+.navbar__mobile-link--promo:hover { color: #e6b800; }
 
 .navbar__mobile-cart {
   display: flex;
@@ -558,15 +579,19 @@ const categories = [
   display: block;
   text-align: center;
   padding: 0.85rem;
-  background: #e6b800;
+  background: linear-gradient(135deg, #f5c842 0%, #e6b800 50%, #c9a000 100%);
   color: #0a0a0a;
   font-weight: 700;
   font-size: 1rem;
   text-decoration: none;
   border-radius: 10px;
-  transition: background 0.2s;
+  box-shadow: 0 4px 16px rgba(230,184,0,0.28);
+  transition: filter 0.2s, box-shadow 0.2s;
 }
-.navbar__mobile-cta-btn:hover { background: #f5c842; }
+.navbar__mobile-cta-btn:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 22px rgba(230,184,0,0.45);
+}
 
 /* Слайд мобильного меню */
 .slide-enter-active, .slide-leave-active {

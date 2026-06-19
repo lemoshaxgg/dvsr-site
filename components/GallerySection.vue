@@ -13,7 +13,7 @@
           :class="[`gallery__item--${item.size}`, item.whiteBg ? 'gallery__item--product' : '']"
           @click="openPhoto(item)"
         >
-          <img v-if="item.src" :src="item.src" :alt="item.title" :class="item.whiteBg ? 'img--product' : ''" />
+          <img v-if="item.src" :src="item.src" :alt="item.title" :class="item.whiteBg ? 'img--product' : ''" loading="lazy" />
           <div v-else class="gallery__placeholder">
             <svg class="gallery__placeholder-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/></svg>
             <span class="gallery__placeholder-label">{{ item.title }}</span>
@@ -24,7 +24,7 @@
         </div>
       </div>
 
-      <p class="gallery__note" data-reveal>Фото из нашего каталога — звоните, чтобы уточнить наличие и цену</p>
+      <p class="gallery__note" data-reveal>Реальные объекты, выполненные командой ДСР. Звоните — обсудим ваш проект.</p>
     </div>
 
     <!-- Лайтбокс -->
@@ -54,16 +54,15 @@ useScrollReveal()
 const activePhoto = ref(null)
 const activeIndex = ref(0)
 
-const photos = [
-  { size: 'wide', icon: '🔩', title: 'Забор из 3D-панелей', src: '/gallery/zabor-panel-3d.jpg', whiteBg: true },
-  { size: 'tall', icon: '🏠', title: 'Жилой дом под ключ', src: null },
-  { size: 'normal', icon: '⚓', title: 'Сваи винтовые', src: '/gallery/svaya-shurup.jpg', whiteBg: true },
-  { size: 'normal', icon: '💧', title: 'Монтаж септика', src: '/gallery/septik.jpg', whiteBg: true },
-  { size: 'normal', icon: '📦', title: 'Бытовка металлическая', src: null },
-  { size: 'wide', icon: '🚜', title: 'Земляные работы', src: null },
-  { size: 'normal', icon: '🐕', title: 'Вольер из сетки', src: '/gallery/setka-volyer.jpg', whiteBg: true },
-  { size: 'normal', icon: '🏗️', title: 'Металлоконструкции', src: null },
-]
+// Реальные фото выполненных работ ДСР (public/works/)
+const WORKS_COUNT = 17
+const wideSet = [0, 5, 8, 13]
+const tallSet = [2, 10]
+const photos = Array.from({ length: WORKS_COUNT }, (_, i) => ({
+  src: `/works/work-${i + 1}.jpg`,
+  size: wideSet.includes(i) ? 'wide' : tallSet.includes(i) ? 'tall' : 'normal',
+  title: 'ДСР — выполненная работа',
+}))
 
 function openPhoto(item) {
   activeIndex.value = photos.indexOf(item)
@@ -125,7 +124,7 @@ function nextPhoto() {
 .gallery__grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 220px);
+  grid-auto-rows: 220px;
   gap: 0.75rem;
 }
 

@@ -9,6 +9,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Montserrat', 'sans-serif'],
+        display: ['"Space Grotesk"', 'Montserrat', 'sans-serif'],
       },
       colors: {
         gold: {

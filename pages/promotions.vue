@@ -57,13 +57,6 @@
       </div>
     </transition>
 
-    <footer class="page-footer">
-      <div class="page-footer__inner">
-        <p>ДСР — Дальневосточные Системы Развития</p>
-        <p>г. Владивосток, ул. Русская, д. 17 &nbsp;|&nbsp; <a href="tel:+79143292929">+7 914 329-29-29</a></p>
-        <p>© {{ new Date().getFullYear() }} ДСР. Все права защищены.</p>
-      </div>
-    </footer>
   </div>
 </template>
 

@@ -8,35 +8,39 @@
 
       <div class="contact__grid">
         <form class="contact__form" data-reveal="left" @submit.prevent="submitForm">
+          <!-- Honeypot для ботов -->
+          <input v-model="form.company" type="text" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
           <div class="form-group">
-            <label class="form-label">Ваше имя <span class="form-required">*</span></label>
-            <input v-model="form.name" type="text" class="form-input" :class="{ 'form-input--error': errors.name }" placeholder="Иван Иванов" maxlength="100" />
+            <label class="form-label" for="cf-name">Ваше имя <span class="form-required">*</span></label>
+            <input id="cf-name" v-model="form.name" type="text" class="form-input" :class="{ 'form-input--error': errors.name }" placeholder="Иван Иванов" maxlength="100" />
             <span v-if="errors.name" class="form-error">{{ errors.name }}</span>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Телефон <span class="form-required">*</span></label>
-            <input :value="form.phone" @input="form.phone = phoneMask($event.target.value)" type="tel" class="form-input" :class="{ 'form-input--error': errors.phone }" placeholder="+7 (___) ___-__-__" maxlength="18" />
+            <label class="form-label" for="cf-phone">Телефон <span class="form-required">*</span></label>
+            <input id="cf-phone" :value="form.phone" @input="form.phone = phoneMask($event.target.value)" type="tel" class="form-input" :class="{ 'form-input--error': errors.phone }" placeholder="+7 (___) ___-__-__" maxlength="18" />
             <span v-if="errors.phone" class="form-error">{{ errors.phone }}</span>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Email <span class="form-optional">(по желанию)</span></label>
-            <input v-model="form.email" type="email" class="form-input" placeholder="mail@example.com" maxlength="100" />
+            <label class="form-label" for="cf-email">Email <span class="form-optional">(по желанию)</span></label>
+            <input id="cf-email" v-model="form.email" type="email" class="form-input" placeholder="mail@example.com" maxlength="100" />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Сообщение <span class="form-required">*</span></label>
-            <textarea v-model="form.message" class="form-input form-textarea" :class="{ 'form-input--error': errors.message }" placeholder="Опишите вашу задачу..." rows="5" maxlength="1000"></textarea>
+            <label class="form-label" for="cf-message">Сообщение <span class="form-required">*</span></label>
+            <textarea id="cf-message" v-model="form.message" class="form-input form-textarea" :class="{ 'form-input--error': errors.message }" placeholder="Опишите вашу задачу..." rows="5" maxlength="1000"></textarea>
             <span v-if="errors.message" class="form-error">{{ errors.message }}</span>
           </div>
 
           <label class="form-consent">
             <input v-model="form.consent" type="checkbox" class="form-consent__checkbox" />
             <span class="form-consent__text">
-              Согласен на
-              <a href="/privacy" target="_blank" class="form-consent__link">обработку персональных данных</a>
-              в соответствии с Политикой конфиденциальности
+              Я даю
+              <a href="/consent" target="_blank" class="form-consent__link">согласие на обработку персональных данных</a>
+              и принимаю
+              <a href="/privacy" target="_blank" class="form-consent__link">Политику конфиденциальности</a>
             </span>
           </label>
           <span v-if="errors.consent" class="form-error">{{ errors.consent }}</span>
@@ -82,7 +86,7 @@ useScrollReveal()
 const loading = ref(false)
 const success = ref(false)
 
-const form = reactive({ name: '', phone: '', email: '', message: '', consent: false })
+const form = reactive({ name: '', phone: '', email: '', message: '', consent: false, company: '' })
 const errors = reactive({ name: '', phone: '', message: '', consent: '' })
 
 function validate() {
