@@ -51,7 +51,11 @@
                   placeholder="Найти услугу или товар..."
                   autocomplete="off"
                   aria-label="Поиск по каталогу"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  :aria-expanded="dropVisible && suggestions.length > 0"
                   @focus="dropVisible = true"
+                  @keydown="onSearchKeydown"
                 />
                 <button v-if="searchQuery" class="catalog__search-clear" aria-label="Очистить поиск" @click="searchQuery = ''; dropVisible = false">✕</button>
               </div>
@@ -60,14 +64,16 @@
               <transition name="suggestions">
                 <div v-if="dropVisible && suggestions.length > 0" class="catalog__suggestions">
                   <div
-                    v-for="item in suggestions"
+                    v-for="(item, idx) in suggestions"
                     :key="item.id"
                     class="catalog__suggestion-item"
+                    :class="{ active: idx === activeSuggestion }"
                     @click="selectSuggestion(item)"
+                    @mouseenter="activeSuggestion = idx"
                   >
                     <svg class="catalog__suggestion-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M3 16l5-5 4 4 3-3 6 6"/></svg>
                     <span class="catalog__suggestion-info">
-                      <span class="catalog__suggestion-title">{{ item.title }}</span>
+                      <span class="catalog__suggestion-title" v-html="highlight(item.title)"></span>
                       <span class="catalog__suggestion-cat">{{ categoryMap[item.category] }}</span>
                     </span>
                     <span class="catalog__suggestion-price">{{ item.price }}</span>
@@ -76,8 +82,8 @@
               </transition>
             </div>
 
-            <!-- Фильтр по цене — слайдер -->
-            <div class="catalog__hero-price">
+            <!-- Фильтр по цене — слайдер (только когда выбрана категория или идёт поиск) -->
+            <div v-if="activeCategory !== 'all' || searchQuery" class="catalog__hero-price">
               <div class="catalog__price-header">
                 <span class="catalog__hero-price-label">Цена, ₽</span>
                 <span class="catalog__price-display">
@@ -121,6 +127,74 @@
         </div>
       </div>
 
+      <!-- Мобильная панель: липкий поиск + выпадающий список всех категорий -->
+      <div class="catalog__mobilebar">
+        <div class="catalog__search-wrap catalog__search-wrap--mobile" v-click-outside="closeDropdown">
+          <div class="catalog__search">
+            <svg class="catalog__search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+              <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="catalog__search-input"
+              placeholder="Найти услугу или товар..."
+              autocomplete="off"
+              aria-label="Поиск по каталогу"
+              role="combobox"
+              aria-autocomplete="list"
+              :aria-expanded="dropVisible && suggestions.length > 0"
+              @focus="dropVisible = true"
+              @keydown="onSearchKeydown"
+            />
+            <button v-if="searchQuery" class="catalog__search-clear" aria-label="Очистить поиск" @click="searchQuery = ''; dropVisible = false">✕</button>
+          </div>
+          <transition name="suggestions">
+            <div v-if="dropVisible && suggestions.length > 0" class="catalog__suggestions">
+              <div
+                v-for="(item, idx) in suggestions"
+                :key="item.id"
+                class="catalog__suggestion-item"
+                :class="{ active: idx === activeSuggestion }"
+                @click="selectSuggestion(item)"
+                @mouseenter="activeSuggestion = idx"
+              >
+                <svg class="catalog__suggestion-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M3 16l5-5 4 4 3-3 6 6"/></svg>
+                <span class="catalog__suggestion-info">
+                  <span class="catalog__suggestion-title" v-html="highlight(item.title)"></span>
+                  <span class="catalog__suggestion-cat">{{ categoryMap[item.category] }}</span>
+                </span>
+                <span class="catalog__suggestion-price">{{ item.price }}</span>
+              </div>
+            </div>
+          </transition>
+        </div>
+
+        <!-- Выпадающий список всех категорий -->
+        <div class="catalog__catdrop" v-click-outside="closeCatDropdown">
+          <button class="catalog__catdrop-btn" :class="{ open: catDropdownOpen }" :aria-expanded="catDropdownOpen" @click="catDropdownOpen = !catDropdownOpen">
+            <svg class="catalog__catdrop-ico" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            <span class="catalog__catdrop-current">{{ currentCategory?.label || 'Все категории' }}</span>
+            <svg class="catalog__catdrop-arrow" :class="{ rotated: catDropdownOpen }" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <transition name="suggestions">
+            <ul v-if="catDropdownOpen" class="catalog__catdrop-list">
+              <li
+                v-for="cat in categories"
+                :key="cat.id"
+                class="catalog__catdrop-item"
+                :class="{ active: activeCategory === cat.id }"
+                @click="selectCategoryMobile(cat.id)"
+              >
+                <span class="catalog__catdrop-label">{{ cat.label }}</span>
+                <span v-if="countByCategory(cat.id)" class="catalog__catdrop-count">{{ countByCategory(cat.id) }}</span>
+              </li>
+            </ul>
+          </transition>
+        </div>
+      </div>
+
       <!-- Основная часть: боковая панель + контент -->
       <div class="catalog__layout">
 
@@ -151,90 +225,11 @@
         <!-- Основной контент -->
         <div class="catalog__main">
 
-          <!-- Карточки категорий (только при "Все") -->
-          <transition name="fade">
-            <div v-if="activeCategory === 'all' && !searchQuery" class="catalog__cats">
-              <div
-                v-for="cat in categories.filter(c => c.id !== 'all')"
-                :key="cat.id"
-                class="catalog__cat-card grad-border"
-                role="button"
-                tabindex="0"
-                :aria-label="`Категория: ${cat.label}`"
-                @click="selectCategory(cat.id)"
-                @keydown.enter.space.prevent="selectCategory(cat.id)"
-              >
-                <div class="catalog__cat-card-visual">
-                  <div class="catalog__cat-card-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24">
-                      <path :d="catIconPaths[cat.id] || 'M3 3h18v18H3z'" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"/>
-                    </svg>
-                  </div>
-                </div>
-                <span class="catalog__cat-card-label">{{ cat.label }}</span>
-              </div>
-            </div>
-          </transition>
-
-          <!-- Популярные товары (когда выбрано "Все" и нет поиска) -->
-          <transition name="fade">
-            <div v-if="activeCategory === 'all' && !searchQuery" class="catalog__popular">
-              <h2 class="catalog__popular-title">Популярные позиции</h2>
-              <div class="catalog__list">
-                <div v-for="item in popularItems" :key="item.id" class="catalog-item">
-                  <NuxtLink :to="`/catalog/${item.id}`" class="catalog-item__link" :aria-label="item.title" />
-                  <div class="catalog-item__img">
-                    <template v-if="item.photos && item.photos.length > 1">
-                      <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" loading="lazy" />
-                      <button class="ci-carousel__prev" aria-label="Предыдущее фото" @click.stop="prevPhoto(item.id, item.photos.length)">&#8249;</button>
-                      <button class="ci-carousel__next" aria-label="Следующее фото" @click.stop="nextPhoto(item.id, item.photos.length)">&#8250;</button>
-                      <div class="ci-carousel__dots">
-                        <span v-for="(_, i) in item.photos" :key="i" class="ci-carousel__dot" :class="{ active: i === getPhotoIdx(item.id) }" @click.stop="setPhotoIdx(item.id, i)"></span>
-                      </div>
-                    </template>
-                    <img v-else-if="productPhoto(item)"
-                      :src="productPhoto(item)"
-                      :alt="item.title"
-                      loading="lazy"
-                      @error="onPhotoError($event, item)"
-                    />
-                    <div v-else class="catalog-item__placeholder">
-                      <div class="catalog-item__placeholder-empty">
-                        <span>{{ item.icon }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="catalog-item__content">
-                    <span class="catalog-item__category">{{ categoryMap[item.category] }}</span>
-                    <h3 class="catalog-item__title">{{ item.title }}</h3>
-                    <p class="catalog-item__desc">{{ item.description }}</p>
-                    <div class="catalog-item__footer">
-                      <div class="catalog-item__price-block">
-                        <span v-if="priceFrom(item)" class="catalog-item__price">{{ priceFrom(item) }}</span>
-                    <span v-else class="catalog-item__price catalog-item__price--ask">Уточнить актуальную цену</span>
-                      </div>
-                      <button class="catalog-item__btn" @click.stop="openOrder(item)">Заявка</button>
-                  <button class="catalog-item__add" :class="{ added: hasItem(item.id) }" :aria-label="hasItem(item.id) ? 'Уже в списке запросов' : 'Добавить в список запросов'" @click.stop="addItem(item)">
-                    <svg v-if="!hasItem(item.id)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
-                      <path stroke="currentColor" stroke-linecap="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
-                    </svg>
-                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
-                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 6L9 17l-5-5"/>
-                    </svg>
-                    <span class="catalog-item__add-tip">{{ hasItem(item.id) ? 'В списке' : 'В список' }}</span>
-                  </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </transition>
-
-          <!-- Заголовок раздела -->
-          <div class="catalog__section-header" v-if="activeCategory !== 'all' || searchQuery">
+          <!-- Заголовок раздела + панель управления (sticky) -->
+          <div class="catalog__section-header">
             <div class="catalog__section-left">
               <h2 class="catalog__section-title">
-                {{ searchQuery ? `«${searchQuery}»` : currentCategory?.label }}
+                {{ searchQuery ? `«${searchQuery}»` : (activeCategory === 'all' ? 'Все товары' : currentCategory?.label) }}
               </h2>
               <span class="catalog__section-badge">{{ filteredItems.length }}</span>
             </div>
@@ -265,7 +260,7 @@
                   </svg>
                 </button>
               </div>
-              <button class="catalog__section-reset" @click="activeCategory = 'all'; searchQuery = ''">
+              <button v-if="activeCategory !== 'all' || searchQuery" class="catalog__section-reset" @click="activeCategory = 'all'; searchQuery = ''">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24">
                   <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M19 12H5M12 5l-7 7 7 7"/>
                 </svg>
@@ -379,7 +374,7 @@
           </div>
 
           <!-- Счётчик позиций -->
-          <div v-if="filteredItems.length > 0 && (activeCategory !== 'all' || searchQuery)" class="catalog__count">
+          <div v-if="filteredItems.length > 0" class="catalog__count">
             Показано {{ paginatedItems.length }} из {{ filteredItems.length }}
           </div>
 
@@ -510,10 +505,11 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, watch, nextTick } from 'vue'
+import { ref, computed, reactive, watch, nextTick, onMounted } from 'vue'
 import { phoneMask } from '~/composables/usePhoneMask.js'
 import { categories, items as staticItems, subcategories } from '~/data/catalog.js'
 import { priceFrom, PRICE_DISCLAIMER } from '~/composables/usePrice.js'
+import { parseQuery, scoreItem, searchItems } from '~/composables/useCatalogSearch.js'
 
 const catIconPaths = {
   fence3d:   'M3 21V9m3-4v16M9 21V5l3-4v20M15 21V5l3-4v16M21 21V9M3 13h18',
@@ -660,11 +656,61 @@ const currentCategory = computed(() =>
 
 const suggestions = computed(() => {
   if (!searchQuery.value.trim()) return []
-  const q = searchQuery.value.toLowerCase()
-  return items
-    .filter(i => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q))
-    .slice(0, 6)
+  return searchItems(items, searchQuery.value, id => categoryMap[id]).slice(0, 6)
 })
+
+// Навигация по подсказкам с клавиатуры (↑ ↓ Enter Esc)
+const activeSuggestion = ref(-1)
+watch(suggestions, () => { activeSuggestion.value = -1 })
+
+function onSearchKeydown(e) {
+  if (!dropVisible.value || suggestions.value.length === 0) {
+    if (e.key === 'Enter') dropVisible.value = false
+    return
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    activeSuggestion.value = (activeSuggestion.value + 1) % suggestions.value.length
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    activeSuggestion.value = activeSuggestion.value <= 0
+      ? suggestions.value.length - 1
+      : activeSuggestion.value - 1
+  } else if (e.key === 'Enter') {
+    e.preventDefault()
+    const pick = activeSuggestion.value >= 0
+      ? suggestions.value[activeSuggestion.value]
+      : suggestions.value[0]
+    if (pick) selectSuggestion(pick)
+  } else if (e.key === 'Escape') {
+    dropVisible.value = false
+    activeSuggestion.value = -1
+  }
+}
+
+// Подсветка совпавших слов запроса в тексте подсказки
+function highlight(text) {
+  const parsed = parseQuery(searchQuery.value)
+  const tokens = parsed.groups.flat().filter(t => t.length >= 2)
+  if (!tokens.length) return escapeHtml(text)
+  const esc = escapeHtml(text)
+  // строим regex по нормализованным токенам (ищем без учёта ё/Е)
+  const pattern = tokens
+    .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .sort((a, b) => b.length - a.length)
+    .join('|')
+  try {
+    return esc.replace(new RegExp(`(${pattern})`, 'giu'), '<mark>$1</mark>')
+  } catch {
+    return esc
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+  ))
+}
 
 function selectSuggestion(item) {
   searchQuery.value = item.title
@@ -676,6 +722,14 @@ function selectSuggestion(item) {
 }
 
 function closeDropdown() { dropVisible.value = false }
+
+// Мобильный выпадающий список категорий
+const catDropdownOpen = ref(false)
+function closeCatDropdown() { catDropdownOpen.value = false }
+function selectCategoryMobile(catId) {
+  selectCategory(catId)
+  catDropdownOpen.value = false
+}
 
 // Выбор категории + прокрутка к товарам на мобиле (сайдбар стоит над списком)
 function selectCategory(catId) {
@@ -805,11 +859,12 @@ const filteredItems = computed(() => {
     result = result.filter(i => i.sub === activeSub.value)
   }
   if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase().trim()
-    result = result.filter(i =>
-      i.title.toLowerCase().includes(q) ||
-      i.description.toLowerCase().includes(q)
-    )
+    const parsed = parseQuery(searchQuery.value)
+    result = result
+      .map(i => ({ i, s: scoreItem(i, parsed, categoryMap[i.category]) }))
+      .filter(x => x.s > 0)
+      .sort((a, b) => b.s - a.s)
+      .map(x => x.i)
   }
   if (priceMin.value !== null || priceMax.value !== null) {
     result = result.filter(i => {
@@ -862,7 +917,10 @@ const sortedItems = computed(() => {
     case 'name_desc':  return arr.sort((a, b) => b.title.localeCompare(a.title, 'ru'))
     case 'price_asc':  return arr.sort((a, b) => (a.basePrice || 0) - (b.basePrice || 0))
     case 'price_desc': return arr.sort((a, b) => (b.basePrice || 0) - (a.basePrice || 0))
-    default: return arr.sort((a, b) => {
+    default:
+      // при активном поиске сохраняем порядок по релевантности
+      if (searchQuery.value.trim()) return arr
+      return arr.sort((a, b) => {
       const aHasPhoto = !!(a.photo || (a.photos && a.photos.length))
       const bHasPhoto = !!(b.photo || (b.photos && b.photos.length))
       if (aHasPhoto === bHasPhoto) return 0
@@ -876,6 +934,32 @@ const paginatedItems = computed(() => sortedItems.value.slice(0, visibleCount.va
 watch([activeCategory, searchQuery, activeSub, priceMin, priceMax], () => {
   visibleCount.value = 24
 })
+
+// ── Появление карточек товара при скролле (IntersectionObserver) ──
+// Скрытое состояние навешивается из JS (класс .ci-reveal), поэтому без JS
+// карточки остаются видимыми. При пагинации/смене фильтра — переобследуем новые.
+let revealObserver = null
+function observeItems() {
+  if (typeof window === 'undefined') return
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  if (!revealObserver) {
+    revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('ci-revealed')
+          revealObserver.unobserve(e.target)
+        }
+      })
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' })
+  }
+  document.querySelectorAll('.catalog-item:not([data-io])').forEach((el) => {
+    el.setAttribute('data-io', '')
+    el.classList.add('ci-reveal')
+    revealObserver.observe(el)
+  })
+}
+onMounted(() => nextTick(observeItems))
+watch(paginatedItems, () => nextTick(observeItems))
 
 function openOrder(item) {
   orderItem.value = item
@@ -931,7 +1015,7 @@ async function submitOrder() {
     radial-gradient(ellipse 70% 60% at 50% -10%, rgba(230,184,0,0.13) 0%, transparent 60%),
     radial-gradient(ellipse 35% 40% at 95% 30%, rgba(230,184,0,0.06) 0%, transparent 50%),
     #0a0a0a;
-  padding: 6rem 1.5rem 2.5rem;
+  padding: 5rem 1.5rem 1.75rem;
   border-bottom: 1px solid rgba(230,184,0,0.08);
   position: relative;
   overflow: hidden;
@@ -1090,9 +1174,9 @@ async function submitOrder() {
 
 .catalog__title {
   font-family: 'Space Grotesk', 'Montserrat', sans-serif;
-  font-size: clamp(1.5rem, 5.5vw, 2.9rem);
+  font-size: clamp(1.4rem, 4.5vw, 2.2rem);
   font-weight: 700;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.85rem;
   letter-spacing: -0.03em;
   line-height: 1.15;
   background: linear-gradient(118deg, #ffffff 0%, #ffe9a3 58%, #e6b800 100%);
@@ -1101,7 +1185,7 @@ async function submitOrder() {
   background-clip: text;
 }
 .catalog__title span { color: #e6b800; -webkit-text-fill-color: #e6b800; }
-.catalog__price-note { font-size: 0.76rem; color: #666; line-height: 1.4; max-width: 620px; margin: 0 0 1.25rem; }
+.catalog__price-note { font-size: 0.74rem; color: #666; line-height: 1.4; max-width: 620px; margin: 0 0 1rem; }
 
 /* Поиск */
 .catalog__search-wrap {
@@ -1161,7 +1245,16 @@ async function submitOrder() {
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 .catalog__suggestion-item:last-child { border-bottom: none; }
-.catalog__suggestion-item:hover { background: rgba(230,184,0,0.08); }
+.catalog__suggestion-item:hover,
+.catalog__suggestion-item.active { background: rgba(230,184,0,0.08); }
+
+.catalog__suggestion-title :deep(mark),
+.catalog__suggestion-title mark {
+  background: rgba(230,184,0,0.28);
+  color: #ffe9a3;
+  border-radius: 3px;
+  padding: 0 1px;
+}
 
 .catalog__suggestion-icon { font-size: 1.1rem; flex-shrink: 0; }
 .catalog__suggestion-info { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
@@ -1285,6 +1378,56 @@ async function submitOrder() {
   transform: translateY(-3px);
 }
 
+/* Вращающаяся градиентная каёмка вокруг карточек категорий (при наведении) */
+@keyframes cat-border-spin {
+  to { transform: rotate(360deg); }
+}
+/* Вращающийся конический градиент — крупнее карточки, обрезается overflow:hidden */
+.catalog__cat-card::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: 50%; left: 50%;
+  width: 175%; aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(245,200,66,0.15) 40deg,
+    rgba(245,200,66,0.95) 80deg,
+    rgba(230,184,0,1) 95deg,
+    rgba(245,200,66,0.15) 130deg,
+    transparent 200deg,
+    transparent 360deg
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  animation: cat-border-spin 4s linear infinite;
+  animation-play-state: paused;
+  pointer-events: none;
+}
+/* Внутренняя «заглушка» — закрывает центр, оставляя видимой только рамку */
+.catalog__cat-card::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 1.5px;
+  border-radius: 13px;
+  background: #0f0f0f;
+  transition: background 0.25s;
+  pointer-events: none;
+}
+.catalog__cat-card:hover::before { opacity: 1; animation-play-state: running; }
+.catalog__cat-card:hover::after { background: #121210; }
+/* Контент поверх рамки */
+.catalog__cat-card-visual,
+.catalog__cat-card-label { position: relative; z-index: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog__cat-card::before { animation: none; }
+}
+
 .catalog__cat-card-visual {
   width: 100%;
   display: flex;
@@ -1326,6 +1469,13 @@ async function submitOrder() {
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 0.75rem;
+  position: sticky;
+  top: 68px;
+  z-index: 30;
+  padding: 0.85rem 0;
+  background: rgba(10,10,10,0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .catalog__section-title { font-size: 1.3rem; font-weight: 700; color: #fff; }
 .catalog__section-right {
@@ -1383,7 +1533,62 @@ async function submitOrder() {
 }
 .catalog-item:hover {
   border-color: rgba(230,184,0,0.4);
-  box-shadow: 0 12px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(230,184,0,0.05), 0 0 32px rgba(230,184,0,0.05);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(230,184,0,0.05), 0 0 40px rgba(230,184,0,0.12);
+}
+
+/* Появление карточки при скролле (класс навешивается из JS) */
+.catalog-item.ci-reveal { opacity: 0; transform: translateY(26px); }
+.catalog-item.ci-reveal.ci-revealed {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.55s ease, transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalog-item.ci-reveal { opacity: 1; transform: none; }
+}
+
+/* Вращающаяся подсветка-каёмка карточки товара (при наведении) */
+.catalog-item::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: 50%; left: 50%;
+  width: 200%; aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(245,200,66,0.12) 35deg,
+    rgba(245,200,66,0.9) 75deg,
+    rgba(230,184,0,1) 92deg,
+    rgba(255,233,163,1) 100deg,
+    rgba(245,200,66,0.12) 140deg,
+    transparent 210deg,
+    transparent 360deg
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  animation: cat-border-spin 3.5s linear infinite;
+  animation-play-state: paused;
+  pointer-events: none;
+}
+/* Внутренняя заглушка — оставляет видимой только тонкую вращающуюся кромку */
+.catalog-item::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 1.5px;
+  border-radius: 15px;
+  background: #0e0e0e;
+  pointer-events: none;
+}
+.catalog-item:hover::before { opacity: 1; animation-play-state: running; }
+/* Контент карточки — поверх вращающейся кромки */
+.catalog-item__img,
+.catalog-item__content { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .catalog-item::before { animation: none; }
 }
 
 .catalog-item__img { min-height: 200px; background: #0d0d0d; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
@@ -1751,13 +1956,95 @@ async function submitOrder() {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* Мобильная */
+/* ── Мобильная липкая панель: поиск + выпадающие категории ── */
+.catalog__mobilebar {
+  display: none; /* включается в медиа ≤900px */
+  flex-direction: column;
+  gap: 0.55rem;
+  position: sticky;
+  top: 56px;
+  z-index: 40;
+  margin: 0 0 1.25rem;
+  padding: 0.7rem 1.5rem 0.8rem;
+  background: rgba(10,10,10,0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(230,184,0,0.1);
+}
+.catalog__mobilebar .catalog__search-wrap { max-width: none; width: 100%; }
+
+.catalog__catdrop { position: relative; }
+.catalog__catdrop-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.catalog__catdrop-btn.open { border-color: rgba(230,184,0,0.5); background: rgba(230,184,0,0.06); }
+.catalog__catdrop-ico { color: #e6b800; flex-shrink: 0; }
+.catalog__catdrop-current { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.catalog__catdrop-arrow { color: #888; flex-shrink: 0; transition: transform 0.25s ease; }
+.catalog__catdrop-arrow.rotated { transform: rotate(180deg); color: #e6b800; }
+
+.catalog__catdrop-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0; right: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  background: rgba(16,16,16,0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(230,184,0,0.2);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  z-index: 50;
+  -webkit-overflow-scrolling: touch;
+}
+.catalog__catdrop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  color: #bbb;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.catalog__catdrop-item:hover,
+.catalog__catdrop-item.active { background: rgba(230,184,0,0.1); color: #e6b800; }
+.catalog__catdrop-label { flex: 1; }
+.catalog__catdrop-count {
+  font-size: 0.72rem;
+  background: rgba(255,255,255,0.07);
+  color: #777;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.catalog__catdrop-item.active .catalog__catdrop-count { background: rgba(230,184,0,0.18); color: #e6b800; }
+
 @media (max-width: 900px) {
   .catalog__layout { grid-template-columns: 1fr; }
-  .catalog__sidebar { position: static; display: flex; flex-wrap: wrap; gap: 0; background: none; border: none; border-radius: 0; flex-direction: column; }
-  .catalog__sidebar-title { display: none; }
-  .catalog__sidebar-list { display: flex; flex-wrap: wrap; padding: 0; gap: 0.4rem; }
-  .catalog__sidebar-item { border: 1px solid #1e1e1e; border-radius: 999px; background: #111; padding: 0.45rem 0.9rem; font-size: 0.8rem; }
-  .catalog__sidebar-item.active { background: rgba(230,184,0,0.12); }
+  /* Сайдбар и поиск в шапке скрыты — их заменяет липкая мобильная панель */
+  .catalog__sidebar { display: none; }
+  .catalog__hero-controls > .catalog__search-wrap { display: none; }
+  .catalog__mobilebar { display: flex; }
+  .catalog__section-header { position: static; backdrop-filter: none; background: none; padding: 0; }
   .catalog__hero-controls { flex-direction: column; }
   .catalog__hero-price { width: 100%; }
   .catalog__hero-price-inputs { border-radius: 12px; }

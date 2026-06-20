@@ -877,19 +877,28 @@ async function submitCart() {
   .cart-drawer { max-width: 100%; }
 }
 
-/* ── Page transition ── */
+/* ── Page transition: космический «варп» (расфокус + масштаб + дрейф) ── */
 .page-enter-active {
-  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.55s ease;
 }
 .page-leave-active {
-  transition: opacity 0.14s ease;
+  transition: opacity 0.3s ease, transform 0.35s ease, filter 0.3s ease;
 }
 .page-enter-from {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(26px) scale(0.985);
+  filter: blur(9px);
 }
 .page-leave-to {
   opacity: 0;
+  transform: scale(1.015);
+  filter: blur(6px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active { transition: opacity 0.2s ease; }
+  .page-enter-from,
+  .page-leave-to { transform: none; filter: none; }
 }
 
 /* ── Boot-экран (первая загрузка) ── */
