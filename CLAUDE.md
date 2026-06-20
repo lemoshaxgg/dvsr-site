@@ -8,7 +8,7 @@
 
 ## Проект
 **ДСР — Дальневосточные Системы Развития**, Владивосток.
-Сайт: https://dvsr-site.vercel.app
+Сайт: https://dsr-dv.ru
 
 **Стек:** Nuxt 3, Vue 3, Tailwind CSS, Supabase, Vercel
 

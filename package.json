@@ -17,5 +17,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
     "pg": "^8.22.0"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   }
 }

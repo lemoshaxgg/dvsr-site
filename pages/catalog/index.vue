@@ -560,8 +560,8 @@ useSeoMeta({
   description: 'Каталог ДСР Владивосток: заборы 3D и ворота, винтовые сваи, септики, кессоны, сетки, стройматериалы и оборудование. Цены, снабжение, поставка и монтаж по Приморскому краю. Более 2300 позиций.',
   ogTitle: 'Каталог товаров и услуг — ДСР Владивосток',
   ogDescription: 'Заборы 3D, сваи, септики, стройматериалы с ценами. Поставка и монтаж по Приморскому краю.',
-  ogImage: 'https://dvsr-site.vercel.app/og-dsr.jpg',
-  ogUrl: 'https://dvsr-site.vercel.app/catalog',
+  ogImage: 'https://dsr-dv.ru/og-dsr.jpg',
+  ogUrl: 'https://dsr-dv.ru/catalog',
 })
 
 const route = useRoute()

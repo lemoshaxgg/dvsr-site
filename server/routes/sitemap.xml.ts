@@ -2,7 +2,7 @@ import { items } from '../../data/catalog.js'
 import { posts } from '../../data/blog.js'
 
 export default defineEventHandler((event) => {
-  const base = 'https://dvsr-site.vercel.app'
+  const base = 'https://dsr-dv.ru'
 
   const staticPages = [
     { url: '/',           changefreq: 'weekly',  priority: '1.0' },

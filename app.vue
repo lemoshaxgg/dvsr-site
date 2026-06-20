@@ -224,7 +224,7 @@ import { phoneMask } from '~/composables/usePhoneMask.js'
 const { cartItems, drawerOpen, removeItem, setQuantity, clearCart, count } = useCart()
 
 // ── SEO: структурированная разметка Schema.org (сайтовая) ──
-const SITE = 'https://dvsr-site.vercel.app'
+const SITE = 'https://dsr-dv.ru'
 const businessLd = {
   '@context': 'https://schema.org',
   '@type': 'Store',
@@ -235,6 +235,7 @@ const businessLd = {
   telephone: '+79143292929',
   email: 'ooo-dsr@bk.ru',
   image: SITE + '/og-dsr.jpg',
+  logo: SITE + '/avatar-dsr.png',
   priceRange: '₽₽',
   address: {
     '@type': 'PostalAddress',
@@ -261,7 +262,11 @@ const websiteLd = {
     'query-input': 'required name=search_term_string',
   },
 }
+const route = useRoute()
 useHead({
+  link: [
+    { rel: 'canonical', href: () => SITE + route.path },
+  ],
   script: [
     { type: 'application/ld+json', innerHTML: JSON.stringify(businessLd) },
     { type: 'application/ld+json', innerHTML: JSON.stringify(websiteLd) },

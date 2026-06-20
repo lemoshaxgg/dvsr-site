@@ -67,8 +67,8 @@ if (post) {
     description: post.excerpt.slice(0, 160),
     ogTitle: post.title,
     ogDescription: post.excerpt,
-    ogImage: post.image ? `https://dvsr-site.vercel.app${post.image}` : undefined,
-    ogUrl: `https://dvsr-site.vercel.app/blog/${post.slug}`,
+    ogImage: post.image ? `https://dsr-dv.ru${post.image}` : undefined,
+    ogUrl: `https://dsr-dv.ru/blog/${post.slug}`,
   })
 } else {
   useHead({ title: 'Статья не найдена — ДСР' })
