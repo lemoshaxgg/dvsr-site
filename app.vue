@@ -34,13 +34,13 @@
     </Transition>
 
     <!-- NavBar живёт вне transition — никогда не мигает -->
-    <NavBar />
+    <NavBar v-if="!isAdmin" />
 
     <NuxtPage />
-    <SiteFooter />
-    <CookieBanner />
-    <TelegramBtn />
-    <WhatsAppBtn />
+    <SiteFooter v-if="!isAdmin" />
+    <CookieBanner v-if="!isAdmin" />
+    <TelegramBtn v-if="!isAdmin" />
+    <WhatsAppBtn v-if="!isAdmin" />
 
     <!-- Кнопка «Наверх» -->
     <transition name="back-top">
@@ -217,7 +217,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { phoneMask } from '~/composables/usePhoneMask.js'
 
 const { cartItems, drawerOpen, removeItem, setQuantity, clearCart, count } = useCart()
@@ -262,6 +262,7 @@ const websiteLd = {
   },
 }
 const route = useRoute()
+const isAdmin = computed(() => route.path.startsWith('/admin'))
 useHead({
   link: [
     { rel: 'canonical', href: () => SITE + route.path },

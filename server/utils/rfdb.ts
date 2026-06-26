@@ -24,6 +24,8 @@ function getPool(): Pool {
   pool = new Pool({
     connectionString: process.env.RF_DATABASE_URL,
     max: 3,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 10000,
     ssl: ca
       ? { ca, rejectUnauthorized: true }
       : { rejectUnauthorized: false },
