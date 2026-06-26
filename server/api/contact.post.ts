@@ -106,26 +106,17 @@ export default defineEventHandler(async (event) => {
     item_price: itemPriceS,
   }
 
-  // Пробуем RF-Postgres (Timeweb), при недоступности — Supabase
-  let saved = false
-  if (isRfDbConfigured()) {
-    try {
-      await insertContactRf(row)
-      saved = true
-    } catch (e) {
-      console.error('RF DB error (fallback to Supabase):', e)
-    }
-  }
-  if (!saved) {
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
-    )
+  // Supabase — основное хранилище (Timeweb недоступен с Vercel)
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_KEY!
+  )
+  try {
     const { error } = await supabase.from('contacts').insert(row)
-    if (error) {
-      console.error('Supabase error:', error)
-      throw createError({ statusCode: 500, message: 'Ошибка сохранения заявки' })
-    }
+    if (error) throw error
+  } catch (e: any) {
+    console.error('Supabase error:', e?.message ?? e)
+    throw createError({ statusCode: 500, message: 'Ошибка сохранения заявки' })
   }
 
   const lines = [
