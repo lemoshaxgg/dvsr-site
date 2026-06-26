@@ -106,16 +106,17 @@ export default defineEventHandler(async (event) => {
     item_price: itemPriceS,
   }
 
-  // Локализация ПД в РФ: если задан RF_DATABASE_URL — пишем в РФ-Postgres
-  // и НЕ дублируем в Supabase. Иначе (на время переезда) — старый путь через Supabase.
+  // Пробуем RF-Postgres (Timeweb), при недоступности — Supabase
+  let saved = false
   if (isRfDbConfigured()) {
     try {
       await insertContactRf(row)
+      saved = true
     } catch (e) {
-      console.error('RF DB error:', e)
-      throw createError({ statusCode: 500, message: 'Ошибка сохранения заявки' })
+      console.error('RF DB error (fallback to Supabase):', e)
     }
-  } else {
+  }
+  if (!saved) {
     const supabase = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_KEY!
