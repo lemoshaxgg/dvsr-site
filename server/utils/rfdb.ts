@@ -33,7 +33,7 @@ function getPool(): Pool {
 
 let tableReady = false
 
-async function ensureTable(): Promise<void> {
+export async function ensureTable(): Promise<void> {
   if (tableReady) return
   await getPool().query(`
     CREATE TABLE IF NOT EXISTS contacts (
