@@ -33,13 +33,15 @@
             <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
             <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M21 21l-4.35-4.35"/>
           </svg>
+          <span v-if="!query && !searchFocused" class="hero__tw" aria-hidden="true">{{ twText }}<span class="hero__tw-cursor">|</span></span>
           <input
             v-model="query"
             type="text"
             class="hero__search-input"
-            placeholder="Найти услугу или товар..."
+            placeholder=""
             autocomplete="off"
-            @focus="showSuggestions = true; loadDynamicItems()"
+            @focus="showSuggestions = true; searchFocused = true; loadDynamicItems()"
+            @blur="searchFocused = false"
           />
           <button v-if="query" type="button" class="hero__search-clear" @click="query = ''">✕</button>
           <button type="submit" class="hero__search-btn btn-shimmer">Найти</button>
@@ -105,6 +107,35 @@ defineProps({ logoSrc: { type: String, default: null } })
 
 const query = ref('')
 const showSuggestions = ref(false)
+const searchFocused = ref(false)
+
+const TW_PHRASES = [
+  'Сварочные работы', '3D заборы и ворота', 'Септики и очистные',
+  'Котлы отопительные', 'Погреба и кессоны', 'Нержавеющие трубы',
+  'Ёмкости пластиковые', 'Дымоходы', 'Профлист', 'Кованые элементы',
+  'Садовое оборудование', 'Винтовые сваи', 'Фасад DOCKE',
+  'Опалубочные системы', 'Малая механизация',
+]
+const twText = ref('')
+let _twIdx = 0, _twTimer = null
+function _twType() {
+  const phrase = TW_PHRASES[_twIdx]
+  if (twText.value.length < phrase.length) {
+    twText.value = phrase.slice(0, twText.value.length + 1)
+    _twTimer = setTimeout(_twType, 65)
+  } else {
+    _twTimer = setTimeout(_twErase, 1800)
+  }
+}
+function _twErase() {
+  if (twText.value.length > 0) {
+    twText.value = twText.value.slice(0, -1)
+    _twTimer = setTimeout(_twErase, 30)
+  } else {
+    _twIdx = (_twIdx + 1) % TW_PHRASES.length
+    _twTimer = setTimeout(_twType, 350)
+  }
+}
 
 const categoryLabelMap = Object.fromEntries(categories.map(c => [c.id, c.label]))
 
@@ -154,6 +185,8 @@ let animFrame = null
 const mouse = { x: -9999, y: -9999 }
 
 onMounted(() => {
+  _twTimer = setTimeout(_twType, 1000)
+
   const c = canvas.value
   if (!c) return
   const ctx = c.getContext('2d')
@@ -236,6 +269,7 @@ onMounted(() => {
 
   onUnmounted(() => {
     cancelAnimationFrame(animFrame)
+    clearTimeout(_twTimer)
     window.removeEventListener('resize', resize)
     window.removeEventListener('mousemove', onMouseMove)
   })
@@ -385,6 +419,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   width: 100%;
+  position: relative;
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 999px;
@@ -396,7 +431,26 @@ onMounted(() => {
   border-color: rgba(230,184,0,0.55);
   box-shadow: 0 0 0 3px rgba(230,184,0,0.08), 0 8px 32px rgba(0,0,0,0.3);
 }
-.hero__search-icon { position: absolute; left: 1.1rem; color: #555; pointer-events: none; }
+.hero__search-icon { position: absolute; left: 1.1rem; color: #555; pointer-events: none; z-index: 1; }
+.hero__tw {
+  position: absolute;
+  left: 2.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #444;
+  font-size: 0.95rem;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: calc(100% - 9rem);
+}
+.hero__tw-cursor {
+  display: inline-block;
+  color: #e6b800;
+  animation: tw-blink 0.75s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes tw-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 .hero__search-input {
   flex: 1;
   padding: 0.9rem 1rem 0.9rem 2.85rem;

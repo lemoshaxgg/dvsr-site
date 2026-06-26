@@ -48,15 +48,20 @@
                   v-model="searchQuery"
                   type="text"
                   class="catalog__search-input"
-                  placeholder="Найти услугу или товар..."
+                  placeholder=""
                   autocomplete="off"
                   aria-label="Поиск по каталогу"
                   role="combobox"
                   aria-autocomplete="list"
                   :aria-expanded="dropVisible && suggestions.length > 0"
-                  @focus="dropVisible = true"
+                  @focus="searchFocused = true; dropVisible = true"
+                  @blur="searchFocused = false"
                   @keydown="onSearchKeydown"
                 />
+                <!-- Typewriter placeholder -->
+                <span v-if="!searchQuery && !searchFocused" class="catalog__tw" aria-hidden="true">
+                  {{ twText }}<span class="catalog__tw-cursor">|</span>
+                </span>
                 <button v-if="searchQuery" class="catalog__search-clear" aria-label="Очистить поиск" @click="searchQuery = ''; dropVisible = false">✕</button>
               </div>
 
@@ -199,31 +204,107 @@
       <div class="catalog__layout">
 
         <!-- Боковая панель -->
-        <aside class="catalog__sidebar">
+        <aside
+          class="catalog__sidebar"
+          @mouseleave="flyoutScheduleClose"
+        >
+          <div class="catalog__sidebar-inner">
           <div class="catalog__sidebar-title">Товары и услуги</div>
           <ul class="catalog__sidebar-list">
             <li
               v-for="cat in categories"
               :key="cat.id"
               class="catalog__sidebar-item"
-              :class="{ active: activeCategory === cat.id }"
+              :class="{ active: activeCategory === cat.id, hovered: hoveredCat === cat.id }"
               role="button"
               tabindex="0"
               :aria-pressed="activeCategory === cat.id"
               @click="selectCategory(cat.id)"
               @keydown.enter.space.prevent="selectCategory(cat.id)"
+              @mouseenter="flyoutOpen(subcategories[cat.id]?.length ? cat.id : null, $event)"
             >
               <span class="catalog__sidebar-label">{{ cat.label }}</span>
               <span v-if="countByCategory(cat.id)" class="catalog__sidebar-count">
                 {{ countByCategory(cat.id) }}
               </span>
+              <svg v-if="subcategories[cat.id]?.length" class="catalog__sidebar-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6l6 6-6 6"/>
+              </svg>
             </li>
           </ul>
+          </div><!-- /catalog__sidebar-inner -->
 
+          <!-- ═══ Мегаменю flyout ═══ -->
+          <transition name="flyout">
+            <div
+              v-if="hoveredCat && subcategories[hoveredCat]?.length"
+              class="catalog__flyout"
+              :style="{ top: flyoutTop + 'px' }"
+              @mouseenter="flyoutCancelClose"
+              @mouseleave="flyoutScheduleClose"
+            >
+              <div class="catalog__flyout-header">
+                <span class="catalog__flyout-title">{{ categories.find(c=>c.id===hoveredCat)?.label }}</span>
+                <span class="catalog__flyout-total">{{ countByCategory(hoveredCat) }} позиций</span>
+              </div>
+              <div class="catalog__flyout-grid">
+                <button
+                  v-for="sub in subcategories[hoveredCat]"
+                  :key="sub.id"
+                  class="catalog__flyout-sub"
+                  @click="selectCategory(hoveredCat); activeSub = sub.id; hoveredCat = null"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6l6 6-6 6"/>
+                  </svg>
+                  <span>{{ sub.label }}</span>
+                </button>
+              </div>
+              <button class="catalog__flyout-all" @click="selectCategory(hoveredCat); hoveredCat = null">
+                Все товары раздела →
+              </button>
+            </div>
+          </transition>
         </aside>
 
         <!-- Основной контент -->
         <div class="catalog__main">
+
+          <!-- ═══ СЕТКА КАТЕГОРИЙ (стартовый экран) ═══ -->
+          <div v-if="activeCategory === 'all' && !searchQuery.trim()" class="catalog__cats-section">
+            <h2 class="catalog__cats-title">Каталог категорий</h2>
+            <div class="catalog__cats">
+              <div
+                v-for="cat in categoriesForGrid"
+                :key="cat.id"
+                class="catalog__cat-card"
+                :class="{ 'catalog__cat-card--photo': cat.img }"
+                role="button"
+                tabindex="0"
+                @click="selectCategory(cat.id)"
+                @keydown.enter.space.prevent="selectCategory(cat.id)"
+              >
+                <div class="catalog__cat-card-visual">
+                  <img v-if="cat.img" :src="cat.img" :alt="cat.label" class="catalog__cat-card-photo" loading="lazy" />
+                  <div v-else class="catalog__cat-card-icon">
+                    <svg v-if="catIconPaths[cat.id]" xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="catIconPaths[cat.id]"/>
+                    </svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24">
+                      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5"/><path stroke="currentColor" stroke-linecap="round" stroke-width="1.5" d="M3 16l5-5 4 4 3-3 6 6"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="catalog__cat-card-footer">
+                  <span class="catalog__cat-card-label">{{ cat.label }}</span>
+                  <span class="catalog__cat-card-count">{{ countByCategory(cat.id) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ СПИСОК ТОВАРОВ (категория выбрана или идёт поиск) ═══ -->
+          <template v-else>
 
           <!-- Заголовок раздела + панель управления (sticky) -->
           <div class="catalog__section-header">
@@ -246,17 +327,30 @@
               </div>
               <!-- Переключатель вид -->
               <div class="catalog__view-toggle">
-                <button class="catalog__view-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'" title="Список" aria-label="Вид списком">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
-                  </svg>
-                </button>
-                <button class="catalog__view-btn" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'" title="Плиткой" aria-label="Вид плиткой">
+                <button class="catalog__view-btn" :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'" title="Плитка" aria-label="Вид плиткой">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
                     <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                     <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                     <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
                     <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </button>
+                <button class="catalog__view-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'" title="Список" aria-label="Вид списком">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                  </svg>
+                </button>
+                <button class="catalog__view-btn" :class="{ active: viewMode === 'compact' }" @click="viewMode = 'compact'" title="Компактно" aria-label="Компактный вид">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                    <rect x="2" y="2" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="10" y="2" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="18" y="2" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="2" y="10" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="10" y="10" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="18" y="10" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="2" y="18" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="10" y="18" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="2"/>
+                    <rect x="18" y="18" width="4" height="4" rx="0.5" stroke="currentColor" stroke-width="2"/>
                   </svg>
                 </button>
               </div>
@@ -396,13 +490,13 @@
             v-if="filteredItems.length > 0"
             name="ci"
             tag="div"
-            :class="['catalog__list', { 'catalog__list--grid': viewMode === 'grid' }]"
+            :class="['catalog__list', { 'catalog__list--grid': viewMode === 'grid' || viewMode === 'compact', 'catalog__list--compact': viewMode === 'compact' }]"
           >
             <div
               v-for="(item, i) in paginatedItems"
               :key="item.id"
               class="catalog-item"
-              :class="{ 'catalog-item--grid': viewMode === 'grid' }"
+              :class="{ 'catalog-item--grid': viewMode === 'grid' || viewMode === 'compact', 'catalog-item--compact': viewMode === 'compact' }"
               :style="{ '--stagger': `${Math.min(i % 24, 10) * 45}ms` }"
             >
               <NuxtLink :to="`/catalog/${item.id}`" class="catalog-item__link" :aria-label="item.title" />
@@ -461,6 +555,8 @@
               <span class="catalog__load-more-total">из {{ filteredItems.length - paginatedItems.length }} оставшихся</span>
             </button>
           </div>
+
+          </template><!-- /v-else: список товаров -->
         </div>
       </div>
     </main>
@@ -492,7 +588,11 @@
             </label>
 
             <textarea v-model="orderForm.message" placeholder="Комментарий — размеры, объём, адрес объекта..." class="modal__input modal__textarea" rows="3" maxlength="500" aria-label="Комментарий"></textarea>
-            <button type="submit" class="modal__submit" :disabled="orderLoading">
+            <label class="modal__consent">
+              <input type="checkbox" v-model="orderForm.consent" class="modal__consent-check" />
+              <span>Я согласен(а) на <a href="/privacy" target="_blank" class="modal__consent-link">обработку персональных данных</a> в соответствии с ФЗ-152</span>
+            </label>
+            <button type="submit" class="modal__submit" :disabled="orderLoading || !orderForm.consent">
               {{ orderLoading ? 'Отправка...' : 'Отправить заявку' }}
             </button>
             <p v-if="orderSuccess" class="modal__success">Заявка отправлена! Мы свяжемся с вами.</p>
@@ -536,7 +636,7 @@ const catIconPaths = {
   kesson:    'M12 2a9 9 0 100 18A9 9 0 0012 2zm0 0v18M3 12h18M7 6l10 12M17 6L7 18',
 }
 
-const viewMode = ref('list')
+const viewMode = ref('grid')
 const sortOptions = [
   { value: 'default',   label: 'По умолч.' },
   { value: 'name_asc',  label: 'А–Я' },
@@ -564,14 +664,53 @@ const route = useRoute()
 const router = useRouter()
 const activeCategory = ref(route.query.cat ? String(route.query.cat) : 'all')
 const searchQuery = ref(route.query.search ? String(route.query.search) : '')
+// Дебаунс: filteredItems пересчитывается через 220мс после последнего символа
+const _debouncedSearch = ref(searchQuery.value)
+let _searchDebTimer = null
+watch(searchQuery, val => {
+  clearTimeout(_searchDebTimer)
+  _searchDebTimer = setTimeout(() => { _debouncedSearch.value = val }, 220)
+}, { immediate: true })
 const dropVisible = ref(false)
 const activeSub = ref(null)
+const searchFocused = ref(false)
+
+// ── Typewriter в поле поиска ──────────────────────────────────────────────
+const TW_PHRASES = [
+  'Сварочные работы', '3D заборы и ворота', 'Септики и очистные',
+  'Котлы отопительные', 'Погреба и кессоны', 'Нержавеющие трубы',
+  'Ёмкости пластиковые', 'Дымоходы', 'Профлист', 'Кованые элементы',
+  'Садовое оборудование', 'Винтовые сваи', 'Фасад DOCKE',
+  'Опалубочные системы', 'Малая механизация',
+]
+const twText = ref('')
+let _twIdx = 0, _twTimer = null
+function _twType() {
+  const phrase = TW_PHRASES[_twIdx]
+  if (twText.value.length < phrase.length) {
+    twText.value = phrase.slice(0, twText.value.length + 1)
+    _twTimer = setTimeout(_twType, 65)
+  } else {
+    _twTimer = setTimeout(_twErase, 1800)
+  }
+}
+function _twErase() {
+  if (twText.value.length > 0) {
+    twText.value = twText.value.slice(0, -1)
+    _twTimer = setTimeout(_twErase, 30)
+  } else {
+    _twIdx = (_twIdx + 1) % TW_PHRASES.length
+    _twTimer = setTimeout(_twType, 350)
+  }
+}
+onMounted(() => { _twTimer = setTimeout(_twType, 900) })
+onUnmounted(() => clearTimeout(_twTimer))
 const priceMin = ref(null)
 const priceMax = ref(null)
 const orderItem = ref(null)
 const orderLoading = ref(false)
 const orderSuccess = ref(false)
-const orderForm = reactive({ name: '', phone: '', message: '', needInstall: false, company: '' })
+const orderForm = reactive({ name: '', phone: '', message: '', needInstall: false, company: '', consent: false })
 
 const photoIndexes = reactive({})
 const failedPrimaryPhotos = reactive(new Set())
@@ -725,6 +864,24 @@ function closeDropdown() { dropVisible.value = false }
 
 // Мобильный выпадающий список категорий
 const catDropdownOpen = ref(false)
+const hoveredCat = ref(null)
+const flyoutTop = ref(0)
+let _flyoutCloseTimer = null
+function flyoutOpen(catId, event) {
+  clearTimeout(_flyoutCloseTimer)
+  hoveredCat.value = catId
+  if (catId && event) {
+    const item = event.currentTarget
+    const sidebar = item.closest('.catalog__sidebar')
+    if (sidebar) flyoutTop.value = item.getBoundingClientRect().top - sidebar.getBoundingClientRect().top
+  }
+}
+function flyoutScheduleClose() {
+  _flyoutCloseTimer = setTimeout(() => { hoveredCat.value = null }, 180)
+}
+function flyoutCancelClose() {
+  clearTimeout(_flyoutCloseTimer)
+}
 function closeCatDropdown() { catDropdownOpen.value = false }
 function selectCategoryMobile(catId) {
   selectCategory(catId)
@@ -775,6 +932,10 @@ const vClickOutside = {
 
 const categoryMap = Object.fromEntries(categories.map(c => [c.id, c.label]))
 
+const categoriesForGrid = computed(() =>
+  categories.filter(c => c.id !== 'all' && countByCategory(c.id) > 0)
+)
+
 const POPULAR_IDS = [1, 5, 34, 58, 15]
 const popularItems = computed(() => {
   const picked = items.filter(i => POPULAR_IDS.includes(i.id))
@@ -782,9 +943,14 @@ const popularItems = computed(() => {
   return picked.length >= 3 ? picked : items.slice(0, 5)
 })
 
+// Предвычисляем счётчики один раз — O(n) при загрузке, O(1) при рендере
+const _catCounts = (() => {
+  const map = { all: items.length }
+  for (const item of items) map[item.category] = (map[item.category] || 0) + 1
+  return map
+})()
 function countByCategory(catId) {
-  if (catId === 'all') return items.length
-  return items.filter(i => i.category === catId).length
+  return _catCounts[catId] || 0
 }
 
 const currentSubs = computed(() =>
@@ -858,8 +1024,8 @@ const filteredItems = computed(() => {
   if (activeSub.value) {
     result = result.filter(i => i.sub === activeSub.value)
   }
-  if (searchQuery.value.trim()) {
-    const parsed = parseQuery(searchQuery.value)
+  if (_debouncedSearch.value.trim()) {
+    const parsed = parseQuery(_debouncedSearch.value)
     result = result
       .map(i => ({ i, s: scoreItem(i, parsed, categoryMap[i.category]) }))
       .filter(x => x.s > 0)
@@ -919,7 +1085,7 @@ const sortedItems = computed(() => {
     case 'price_desc': return arr.sort((a, b) => (b.basePrice || 0) - (a.basePrice || 0))
     default:
       // при активном поиске сохраняем порядок по релевантности
-      if (searchQuery.value.trim()) return arr
+      if (_debouncedSearch.value.trim()) return arr
       return arr.sort((a, b) => {
       const aHasPhoto = !!(a.photo || (a.photos && a.photos.length))
       const bHasPhoto = !!(b.photo || (b.photos && b.photos.length))
@@ -1219,6 +1385,25 @@ async function submitOrder() {
 .catalog__search-input::placeholder { color: #555; }
 .catalog__search-clear { position: absolute; right: 1rem; background: none; border: none; color: #555; cursor: pointer; transition: color 0.2s; font-size: 0.9rem; }
 .catalog__search-clear:hover { color: #fff; }
+.catalog__tw {
+  position: absolute;
+  left: 2.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #555;
+  font-size: 0.95rem;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: calc(100% - 5rem);
+}
+.catalog__tw-cursor {
+  display: inline-block;
+  color: #e6b800;
+  animation: tw-blink 0.75s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes tw-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
 /* Подсказки каталога */
 .catalog__suggestions {
@@ -1280,12 +1465,15 @@ async function submitOrder() {
 
 /* Боковая панель */
 .catalog__sidebar {
+  position: sticky;
+  top: 80px;
+  z-index: 50;
+}
+.catalog__sidebar-inner {
   background: #0d0d0d;
   border: 1px solid rgba(230,184,0,0.1);
   border-radius: 16px;
   overflow: hidden;
-  position: sticky;
-  top: 80px;
   max-height: calc(100vh - 100px);
   display: flex;
   flex-direction: column;
@@ -1330,10 +1518,96 @@ async function submitOrder() {
   font-weight: 500;
   border-left: 2px solid transparent;
 }
-.catalog__sidebar-item:hover { background: rgba(230,184,0,0.06); color: #e6b800; border-left-color: #e6b800; }
+.catalog__sidebar-item:hover,
+.catalog__sidebar-item.hovered { background: rgba(230,184,0,0.06); color: #e6b800; border-left-color: #e6b800; }
 .catalog__sidebar-item.active { background: rgba(230,184,0,0.08); color: #e6b800; border-left-color: #e6b800; font-weight: 600; }
 
 .catalog__sidebar-label { flex: 1; line-height: 1.3; }
+.catalog__sidebar-arrow { color: #444; transition: color 0.18s; flex-shrink: 0; }
+.catalog__sidebar-item:hover .catalog__sidebar-arrow,
+.catalog__sidebar-item.hovered .catalog__sidebar-arrow { color: #e6b800; }
+
+/* ── Flyout мегаменю ── */
+.catalog__flyout {
+  position: absolute;
+  left: calc(100% + 8px);
+  width: 340px;
+  background: rgba(14,14,14,0.99);
+  border: 1px solid rgba(230,184,0,0.25);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(230,184,0,0.05);
+  backdrop-filter: blur(20px);
+  z-index: 100;
+  overflow: hidden;
+}
+.catalog__flyout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.catalog__flyout-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #e6b800;
+}
+.catalog__flyout-total {
+  font-size: 0.7rem;
+  color: #555;
+  background: rgba(255,255,255,0.04);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+.catalog__flyout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 0.5rem;
+}
+.catalog__flyout-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.78rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.3;
+}
+.catalog__flyout-sub svg { color: #444; flex-shrink: 0; transition: color 0.15s, transform 0.15s; }
+.catalog__flyout-sub:hover { background: rgba(230,184,0,0.08); color: #fff; }
+.catalog__flyout-sub:hover svg { color: #e6b800; transform: translateX(2px); }
+.catalog__flyout-all {
+  display: block;
+  width: calc(100% - 1rem);
+  margin: 0 0.5rem 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(230,184,0,0.07);
+  border: 1px solid rgba(230,184,0,0.2);
+  border-radius: 8px;
+  color: #e6b800;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: center;
+}
+.catalog__flyout-all:hover { background: rgba(230,184,0,0.13); border-color: rgba(230,184,0,0.4); }
+
+/* Анимация flyout */
+.flyout-enter-active { transition: opacity 0.18s ease, transform 0.18s ease; }
+.flyout-leave-active { transition: opacity 0.12s ease; }
+.flyout-enter-from  { opacity: 0; transform: translateX(-6px); }
+.flyout-leave-to    { opacity: 0; }
+
 .catalog__sidebar-count {
   font-size: 0.72rem;
   background: rgba(255,255,255,0.07);
@@ -1348,104 +1622,92 @@ async function submitOrder() {
 /* Основной контент */
 .catalog__main { min-width: 0; }
 
-/* Карточки категорий */
+/* ── Сетка категорий ── */
+.catalog__cats-section { margin-bottom: 2rem; }
+.catalog__cats-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #1e1e1e;
+}
+
 .catalog__cats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.85rem;
+  gap: 1rem;
   margin-bottom: 2.5rem;
 }
 
+/* Базовая карточка категории (иконка) */
 .catalog__cat-card {
   position: relative;
   overflow: hidden;
   background: #0f0f0f;
   border: 1px solid #1e1e1e;
   border-radius: 14px;
-  padding: 1.5rem 1rem 1.25rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s, background 0.25s;
-  min-height: 130px;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+  user-select: none;
 }
 .catalog__cat-card:hover {
-  border-color: rgba(230,184,0,0.4);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  background: #121210;
+  border-color: rgba(230,184,0,0.45);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(230,184,0,0.06);
   transform: translateY(-3px);
 }
 
-/* Вращающаяся градиентная каёмка вокруг карточек категорий (при наведении) */
-@keyframes cat-border-spin {
-  to { transform: rotate(360deg); }
-}
-/* Вращающийся конический градиент — крупнее карточки, обрезается overflow:hidden */
+/* Вращающаяся каёмка */
+@keyframes cat-border-spin { to { transform: rotate(360deg); } }
 .catalog__cat-card::before {
   content: '';
-  position: absolute;
-  z-index: 0;
+  position: absolute; z-index: 0;
   top: 50%; left: 50%;
   width: 175%; aspect-ratio: 1;
   transform: translate(-50%, -50%);
-  transform-origin: center;
   background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(245,200,66,0.15) 40deg,
-    rgba(245,200,66,0.95) 80deg,
-    rgba(230,184,0,1) 95deg,
-    rgba(245,200,66,0.15) 130deg,
-    transparent 200deg,
-    transparent 360deg
+    from 0deg, transparent 0deg,
+    rgba(245,200,66,0.15) 40deg, rgba(230,184,0,1) 95deg,
+    rgba(245,200,66,0.15) 130deg, transparent 200deg, transparent 360deg
   );
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s;
   animation: cat-border-spin 4s linear infinite;
   animation-play-state: paused;
   pointer-events: none;
 }
-/* Внутренняя «заглушка» — закрывает центр, оставляя видимой только рамку */
 .catalog__cat-card::after {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  inset: 1.5px;
-  border-radius: 13px;
-  background: #0f0f0f;
-  transition: background 0.25s;
-  pointer-events: none;
+  content: ''; position: absolute; z-index: 0;
+  inset: 1.5px; border-radius: 13px;
+  background: #0f0f0f; transition: background 0.25s; pointer-events: none;
 }
 .catalog__cat-card:hover::before { opacity: 1; animation-play-state: running; }
-.catalog__cat-card:hover::after { background: #121210; }
-/* Контент поверх рамки */
-.catalog__cat-card-visual,
-.catalog__cat-card-label { position: relative; z-index: 1; }
+.catalog__cat-card:hover::after  { background: #111108; }
+@media (prefers-reduced-motion: reduce) { .catalog__cat-card::before { animation: none; } }
 
-@media (prefers-reduced-motion: reduce) {
-  .catalog__cat-card::before { animation: none; }
-}
-
+/* Визуальная часть */
 .catalog__cat-card-visual {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative; z-index: 1;
+  width: 100%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 
+/* Карточка с иконкой */
+.catalog__cat-card:not(.catalog__cat-card--photo) .catalog__cat-card-visual {
+  padding: 1.5rem 1rem 0.75rem;
+}
 .catalog__cat-card-icon {
-  width: 54px; height: 54px;
+  width: 56px; height: 56px;
   background: linear-gradient(150deg, rgba(245,200,66,0.14), rgba(230,184,0,0.04));
   border: 1px solid rgba(230,184,0,0.22);
   border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
   color: #e6b800;
-  flex-shrink: 0;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s, border-color 0.3s;
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), border-color 0.3s, box-shadow 0.3s;
 }
 .catalog__cat-card:hover .catalog__cat-card-icon {
   transform: translateY(-3px);
@@ -1453,13 +1715,68 @@ async function submitOrder() {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 20px rgba(230,184,0,0.18);
 }
 
+/* Карточка с фотографией */
+.catalog__cat-card--photo .catalog__cat-card-visual {
+  height: 140px;
+  background: #111;
+}
+.catalog__cat-card-photo {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease, filter 0.3s;
+  filter: brightness(0.82) saturate(0.9);
+}
+.catalog__cat-card--photo:hover .catalog__cat-card-photo {
+  transform: scale(1.06);
+  filter: brightness(0.95) saturate(1.1);
+}
+
+/* Нижняя часть карточки */
+.catalog__cat-card-footer {
+  position: relative; z-index: 1;
+  padding: 0.85rem 1rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.catalog__cat-card--photo .catalog__cat-card-footer {
+  border-top: none;
+  background: linear-gradient(180deg, rgba(10,10,8,0) 0%, rgba(10,10,8,0.95) 100%);
+}
+
+/* Иконные карточки — footer без верхней линии, паддинг сверху меньше */
+.catalog__cat-card:not(.catalog__cat-card--photo) .catalog__cat-card-footer {
+  border-top: none;
+  padding-top: 0.5rem;
+  padding-bottom: 1rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .catalog__cat-card-label {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #ccc;
   line-height: 1.3;
   text-align: center;
+  flex: 1;
 }
+.catalog__cat-card--photo .catalog__cat-card-label { color: #eee; text-align: left; }
+
+.catalog__cat-card-count {
+  font-size: 0.68rem;
+  color: #555;
+  background: rgba(255,255,255,0.06);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.catalog__cat-card:hover .catalog__cat-card-count { color: #e6b800; background: rgba(230,184,0,0.12); }
 
 /* Заголовок раздела */
 .catalog__section-header {
@@ -2071,6 +2388,13 @@ async function submitOrder() {
 .modal__input:focus { border-color: #e6b800; }
 .modal__input::placeholder { color: #444; }
 .modal__textarea { resize: vertical; min-height: 80px; }
+.modal__consent {
+  display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer;
+  font-size: 0.72rem; color: #555; line-height: 1.5;
+}
+.modal__consent-check { flex-shrink: 0; width: 14px; height: 14px; margin-top: 2px; accent-color: #e6b800; cursor: pointer; }
+.modal__consent-link { color: #e6b800; text-decoration: underline; }
+
 .modal__submit { padding: 0.85rem; background: #e6b800; color: #0a0a0a; font-size: 1rem; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; font-family: inherit; transition: background 0.2s; }
 .modal__submit:hover:not(:disabled) { background: #f5c842; }
 .modal__submit:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -2242,7 +2566,7 @@ async function submitOrder() {
 .catalog-item__link {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 3;
   border-radius: inherit;
   font-size: 0;
 }
@@ -2251,7 +2575,7 @@ async function submitOrder() {
 .catalog-item__add,
 .ci-carousel__prev,
 .ci-carousel__next,
-.ci-carousel__dots { z-index: 2; }
+.ci-carousel__dots { position: relative; z-index: 4; }
 
 @media (max-width: 640px) {
   .modal--detail { flex-direction: column; padding: 1.25rem; }
@@ -2374,7 +2698,7 @@ async function submitOrder() {
 .ci-leave-to   { opacity: 0; }
 .ci-move { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
 
-/* ── Grid режим ── */
+/* ── Grid режим (плитка 2-3 колонки) ── */
 .catalog__list--grid {
   display: grid !important;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -2396,6 +2720,21 @@ async function submitOrder() {
 .catalog-item--grid .catalog-item__desc  { font-size: 0.78rem; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
 .catalog-item--grid .catalog-item__footer { flex-wrap: nowrap; gap: 0.5rem; }
 .catalog-item--grid .catalog-item__btn { font-size: 0.78rem; padding: 0.5rem 0.8rem; flex: 1; }
+
+/* ── Compact режим (мелкая плитка 4-5 колонок) ── */
+.catalog__list--compact {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+  gap: 0.65rem !important;
+}
+.catalog-item--compact .catalog-item__img { min-height: 130px; max-height: 150px; }
+.catalog-item--compact .catalog-item__content { padding: 0.75rem; gap: 0.3rem; }
+.catalog-item--compact .catalog-item__category { font-size: 0.6rem; }
+.catalog-item--compact .catalog-item__title { font-size: 0.78rem; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.catalog-item--compact .catalog-item__desc { display: none; }
+.catalog-item--compact .catalog-item__price { font-size: 0.85rem; }
+.catalog-item--compact .catalog-item__footer { gap: 0.3rem; }
+.catalog-item--compact .catalog-item__btn { font-size: 0.72rem; padding: 0.4rem 0.6rem; }
+.catalog-item--compact .catalog-item__add { padding: 0.4rem; }
 
 /* ── Кнопка "В список" + тултип ── */
 .catalog-item__add {
@@ -2443,7 +2782,7 @@ async function submitOrder() {
 
 @media (max-width: 640px) {
   .catalog__sort-pills { display: none; }
-  .catalog__view-toggle { display: none; }
   .catalog__list--grid { grid-template-columns: repeat(2, 1fr); }
+  .catalog__list--compact { grid-template-columns: repeat(3, 1fr) !important; gap: 0.4rem !important; }
 }
 </style>

@@ -275,7 +275,11 @@
                   <input :value="form.phone" @input="form.phone = phoneMask($event.target.value)" type="tel" placeholder="+7 (___) ___-__-__" class="pp-modal__input" maxlength="18" />
                 </div>
                 <textarea v-model="form.message" placeholder="Комментарий — количество, сроки, адрес объекта..." class="pp-modal__input pp-modal__textarea" rows="2" maxlength="500"></textarea>
-                <button type="submit" class="pp-modal__submit" :disabled="loading">
+                <label class="pp-modal__consent">
+                  <input type="checkbox" v-model="form.consent" class="pp-modal__consent-check" />
+                  <span>Я согласен(а) на <a href="/privacy" target="_blank" class="pp-modal__consent-link">обработку персональных данных</a> в соответствии с ФЗ-152</span>
+                </label>
+                <button type="submit" class="pp-modal__submit" :disabled="loading || !form.consent">
                   <span v-if="loading" class="pp-modal__spinner"></span>
                   {{ loading ? 'Отправка...' : 'Отправить в ДСР' }}
                 </button>
@@ -414,7 +418,7 @@ const tabs = [
   { id: 'specs', label: 'Характеристики' },
   { id: 'adv',   label: 'Преимущества' },
 ]
-const form = reactive({ name: '', phone: '', message: '' })
+const form = reactive({ name: '', phone: '', message: '', consent: false })
 
 function copyLink() {
   if (process.client) {
@@ -732,6 +736,13 @@ async function submitOrder() {
 .pp-modal__input:focus { border-color: rgba(230,184,0,0.4); }
 .pp-modal__input::placeholder { color: #2a2a2a; }
 .pp-modal__textarea { resize: none; min-height: 60px; padding-left: 0.9rem; }
+
+.pp-modal__consent {
+  display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer;
+  font-size: 0.72rem; color: #555; line-height: 1.5;
+}
+.pp-modal__consent-check { flex-shrink: 0; width: 14px; height: 14px; margin-top: 2px; accent-color: #e6b800; cursor: pointer; }
+.pp-modal__consent-link { color: #e6b800; text-decoration: underline; }
 
 .pp-modal__submit {
   display: flex; align-items: center; justify-content: center; gap: 0.5rem;

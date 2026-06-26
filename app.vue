@@ -182,6 +182,11 @@
                 <textarea v-model="cartForm.message"
                   placeholder="Комментарий — сроки, адрес объекта..."
                   class="cart-input cart-textarea" rows="2" maxlength="500"></textarea>
+                <label class="cart-drawer__consent">
+                  <input v-model="cartForm.consent" type="checkbox" class="cart-drawer__consent-cb" />
+                  <span>Я даю <a href="/consent" target="_blank">согласие на обработку персональных данных</a> и принимаю <a href="/privacy" target="_blank">Политику конфиденциальности</a></span>
+                </label>
+                <span v-if="cartConsentError" class="cart-drawer__consent-err">Необходимо согласие на обработку данных</span>
                 <button type="submit" class="cart-submit btn-shimmer" :disabled="cartLoading">
                   <transition name="submit-text" mode="out-in">
                     <span v-if="cartLoading" key="loading" class="cart-submit__inner">
@@ -194,12 +199,6 @@
                     </span>
                   </transition>
                 </button>
-                <p class="cart-consent">
-                  Нажимая «Отправить запрос», вы соглашаетесь с
-                  <a href="/consent" target="_blank">обработкой персональных данных</a>
-                  и
-                  <a href="/privacy" target="_blank">Политикой конфиденциальности</a>.
-                </p>
                 <transition name="cart-success">
                   <p v-if="cartSuccess" class="cart-success">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24">
@@ -332,10 +331,13 @@ watch(count, () => {
 
 const cartLoading = ref(false)
 const cartSuccess = ref(false)
-const cartForm = reactive({ name: '', phone: '', message: '' })
+const cartConsentError = ref(false)
+const cartForm = reactive({ name: '', phone: '', message: '', consent: false })
 
 async function submitCart() {
+  cartConsentError.value = false
   if (!cartForm.name || !cartForm.phone) return
+  if (!cartForm.consent) { cartConsentError.value = true; return }
   cartLoading.value = true
 
   const itemsList = cartItems.value
@@ -358,6 +360,7 @@ async function submitCart() {
     cartForm.name = ''
     cartForm.phone = ''
     cartForm.message = ''
+    cartForm.consent = false
     clearCart()
   } catch {
     cartForm.message = 'Ошибка. Позвоните нам напрямую.'
@@ -846,15 +849,32 @@ async function submitCart() {
 .submit-text-enter-active, .submit-text-leave-active { transition: opacity 0.15s; }
 .submit-text-enter-from, .submit-text-leave-to { opacity: 0; }
 
-.cart-consent {
-  font-size: 0.68rem;
-  line-height: 1.5;
-  color: #555;
-  margin: 0;
-  text-align: center;
+.cart-drawer__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
 }
-.cart-consent a { color: #888; text-decoration: underline; }
-.cart-consent a:hover { color: #e6b800; }
+.cart-drawer__consent-cb {
+  margin-top: 2px;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  accent-color: #e6b800;
+  cursor: pointer;
+}
+.cart-drawer__consent span {
+  font-size: 0.72rem;
+  color: #555;
+  line-height: 1.55;
+}
+.cart-drawer__consent a { color: #888; text-decoration: underline; }
+.cart-drawer__consent a:hover { color: #e6b800; }
+.cart-drawer__consent-err {
+  font-size: 0.72rem;
+  color: #e05555;
+  margin-top: -0.25rem;
+}
 
 .cart-success {
   display: flex;

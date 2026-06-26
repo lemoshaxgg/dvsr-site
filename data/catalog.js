@@ -1,18 +1,18 @@
 ﻿export const categories = [
   { id: 'all',       label: 'Все категории' },
-  { id: 'fence3d',   label: '3D заборы и ворота',      img: '/catalog/categories/fence3d2.jpg' },
-  { id: 'mesh',      label: 'Сетки',                   img: '/catalog/categories/mesh.jpg' },
-  { id: 'piles',     label: 'Сваи и фундаменты',       img: '/catalog/categories/piles.jpg' },
-  { id: 'septic',    label: 'Септики и очистные',      img: '/catalog/categories/septic2.jpg' },
-  { id: 'kesson',    label: 'Кессоны' },
-  { id: 'cellar',    label: 'Погреба' },
-  { id: 'tanks',     label: 'Ёмкости пластиковые' },
+  { id: 'fence3d',   label: '3D заборы и ворота',        img: '/catalog/fence3d.jpg' },
+  { id: 'mesh',      label: 'Сетки',                     img: '/catalog/mesh.jpg' },
+  { id: 'piles',     label: 'Сваи и фундаменты',         img: '/catalog/products/36.jpg' },
+  { id: 'septic',    label: 'Септики и очистные',        img: '/catalog/septic.jpg' },
+  { id: 'kesson',    label: 'Кессоны',                   img: '/catalog/products/64.jpg' },
+  { id: 'cellar',    label: 'Погреба',                   img: '/catalog/products/75.jpg' },
+  { id: 'tanks',     label: 'Ёмкости пластиковые',       img: '/catalog/products/193.jpg' },
   { id: 'fglass',    label: 'Стеклопластик (ЛОС)' },
-  { id: 'proflist',  label: 'Профлист и алюминий',     img: '/catalog/categories/proflist.jpg' },
-  { id: 'rail',      label: 'Нерж. ограждения' },
-  { id: 'boiler',    label: 'Котлы отопительные' },
-  { id: 'chimney',   label: 'Дымоходы' },
-  { id: 'docke',     label: 'Фасад DOCKE' },
+  { id: 'proflist',  label: 'Профлист и алюминий',       img: '/catalog/proflist.jpg' },
+  { id: 'rail',      label: 'Нерж. ограждения',          img: '/catalog/products/109.jpg' },
+  { id: 'boiler',    label: 'Котлы отопительные',        img: '/catalog/boiler-front.jpg' },
+  { id: 'chimney',   label: 'Дымоходы',                  img: '/catalog/products/125.jpg' },
+  { id: 'docke',     label: 'Фасад DOCKE',               img: '/catalog/products/130.jpg' },
   { id: 'welding',   label: 'Сварочные работы' },
   { id: 'pipe',      label: 'Трубопроводная арматура' },
   { id: 'industry',  label: 'Промышленное оборудование' },
@@ -20,15 +20,15 @@
   { id: 'hardware',  label: 'Метизы' },
   { id: 'plastic',   label: 'Трубы ПНД, ПЭ, ПП' },
   { id: 'plumbing',  label: 'Сантехника' },
-  { id: 'forged',    label: 'Кованые элементы' },
-  { id: 'garden',    label: 'Садовое оборудование' },
+  { id: 'forged',    label: 'Кованые элементы',          img: '/catalog/products/144.jpg' },
+  { id: 'garden',    label: 'Садовое оборудование',      img: '/catalog/bench.jpg' },
   { id: 'services',  label: 'Услуги' },
   { id: 'cable',     label: 'Кабели и провода' },
   { id: 'stainless', label: 'Нержавеющий прокат' },
   { id: 'metalroll', label: 'Металлопрокат' },
   { id: 'hatches',   label: 'Люки и шахты' },
   { id: 'formwork',  label: 'Опалубочные системы' },
-  { id: 'machinery', label: 'Малая механизация' },
+  { id: 'machinery', label: 'Малая механизация',         img: '/catalog/machinery/mrt73_optimized.webp' },
 ]
 
 export const subcategories = {
@@ -463,4 +463,16 @@ export const items = [
 import { sigCategories, sigItems } from './catalog-sig.js'
 categories.push(...sigCategories)
 items.push(...sigItems)
+
+// ── Восток Кабель (vostokkabel-vl.ru) — электротовары ──
+import { vkCategories, vkSubcategories, vkItems } from './catalog-vostokkabel.js'
+categories.push(...vkCategories)
+Object.assign(subcategories, vkSubcategories)
+items.push(...vkItems)
+
+// ── Пластпродукт (plastdv.ru) — трубы ПЭ, фитинги, оборудование ──
+import { pdCategories, pdSubcategories, pdItems } from './catalog-plastdv.js'
+categories.push(...pdCategories)
+Object.assign(subcategories, pdSubcategories)
+items.push(...pdItems)
 
