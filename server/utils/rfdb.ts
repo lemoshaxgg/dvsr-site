@@ -16,6 +16,8 @@ export function isRfDbConfigured(): boolean {
   return !!process.env.RF_DATABASE_URL
 }
 
+export function getRfPool(): Pool { return getPool() }
+
 function getPool(): Pool {
   if (pool) return pool
   const ca = process.env.RF_DB_CA
@@ -42,6 +44,9 @@ async function ensureTable(): Promise<void> {
       message     TEXT,
       item_title  TEXT,
       item_price  TEXT,
+      status      TEXT NOT NULL DEFAULT 'new',
+      notes       TEXT NOT NULL DEFAULT '',
+      updated_at  TIMESTAMPTZ,
       created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `)
