@@ -1,5 +1,5 @@
 # ── Сборка Nuxt 3 (node-server preset) ──
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # Зависимости (кэшируемый слой)
@@ -11,7 +11,7 @@ COPY . .
 RUN npm run build
 
 # ── Рантайм: только .output + node ──
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
