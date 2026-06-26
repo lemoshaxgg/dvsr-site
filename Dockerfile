@@ -8,7 +8,7 @@ RUN npm ci
 
 # Исходники и сборка
 COPY . .
-RUN ls data/ && npm run build
+RUN npm run build
 
 # ── Рантайм: только .output + node ──
 FROM node:22-alpine AS runtime
