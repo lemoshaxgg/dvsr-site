@@ -1,14 +1,9 @@
 import { Pool } from 'pg'
 
-// Подключение к РФ-Postgres (например, Yandex Cloud Managed PostgreSQL).
-// Локализация ПД в РФ (152-ФЗ ст. 18 ч. 5). Включается, как только задан RF_DATABASE_URL.
-//
+// Подключение к РФ-Postgres (Timeweb Cloud, 152-ФЗ).
 // ENV:
-//   RF_DATABASE_URL  — строка подключения postgres://user:pass@host:6432/db
-//   RF_DB_CA         — (опц.) PEM-сертификат CA провайдера (для Yandex Cloud sslmode=verify-full)
-//
-// Если RF_DATABASE_URL не задан — функция isRfDbConfigured() вернёт false,
-// и обработчик заявок использует прежний путь (Supabase) до завершения переезда.
+//   RF_DATABASE_URL — строка подключения postgres://user:pass@host:5432/db
+//   RF_DB_CA        — (опц.) PEM-сертификат CA провайдера
 
 let pool: Pool | null = null
 
@@ -34,6 +29,7 @@ function getPool(): Pool {
 }
 
 let tableReady = false
+let cmsTableReady = false
 
 export async function ensureTable(): Promise<void> {
   if (tableReady) return
@@ -53,6 +49,25 @@ export async function ensureTable(): Promise<void> {
     )
   `)
   tableReady = true
+}
+
+export async function ensureCatalogCmsTable(): Promise<void> {
+  if (cmsTableReady) return
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS catalog_cms (
+      id          BIGSERIAL PRIMARY KEY,
+      item_id     INTEGER UNIQUE,
+      category    TEXT,
+      sub         TEXT,
+      title       TEXT,
+      description TEXT,
+      unit        TEXT,
+      photo       TEXT,
+      is_hidden   BOOLEAN NOT NULL DEFAULT false,
+      updated_at  TIMESTAMPTZ
+    )
+  `)
+  cmsTableReady = true
 }
 
 export interface ContactRow {

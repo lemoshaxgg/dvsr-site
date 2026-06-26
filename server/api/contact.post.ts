@@ -1,6 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
+import { insertContactRf, ensureTable } from '~/server/utils/rfdb'
 
-// Экранирование пользовательского ввода для Telegram parse_mode: HTML
 function escapeHtml(s: string) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
@@ -24,7 +23,7 @@ defineRouteMeta({
     tags: ['Заявки'],
     summary: 'Отправить заявку с сайта',
     description:
-      'Сохраняет заявку в Supabase и отправляет уведомление в Telegram. Обязательные поля: name, phone, message.',
+      'Сохраняет заявку в базу данных и отправляет уведомление в Telegram. Обязательные поля: name, phone, message.',
     requestBody: {
       content: {
         'application/json': {
@@ -52,8 +51,6 @@ defineRouteMeta({
   },
 })
 
-// Примитивный rate-limit по IP. В serverless живёт в пределах тёплого инстанса —
-// это не замена WAF, но отсекает простой флуд.
 const hits = new Map<string, number[]>()
 const WINDOW = 60_000
 const MAX_PER_WINDOW = 5
@@ -62,14 +59,12 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { name, phone, email, message, item_title, item_price, company } = body || {}
 
-  // Honeypot: скрытое поле, которое заполняют только боты — тихо принимаем и выходим
   if (company) return { ok: true }
 
   if (!name || !phone || !message) {
     throw createError({ statusCode: 400, message: 'Заполните обязательные поля' })
   }
 
-  // Серверная валидация и обрезка длины (клиентский maxlength обходится)
   const nameS  = String(name).trim().slice(0, 100)
   const phoneS = String(phone).trim().slice(0, 20)
   const emailS = email ? String(email).trim().slice(0, 100) : null
@@ -87,7 +82,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Некорректный email' })
   }
 
-  // Rate-limit по IP
   const ip = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
   const now = Date.now()
   const recent = (hits.get(ip) || []).filter((t) => now - t < WINDOW)
@@ -97,37 +91,12 @@ export default defineEventHandler(async (event) => {
   recent.push(now)
   hits.set(ip, recent)
 
-  const row = {
-    name: nameS,
-    phone: phoneS,
-    email: emailS,
-    message: messageS,
-    item_title: itemTitleS,
-    item_price: itemPriceS,
-  }
-
-  // Пробуем RF-Postgres (Timeweb, РФ), fallback — Supabase
-  let saved = false
-  if (isRfDbConfigured()) {
-    try {
-      await insertContactRf(row)
-      saved = true
-    } catch (e: any) {
-      console.error('RF DB error, fallback to Supabase:', e?.message ?? e)
-    }
-  }
-  if (!saved) {
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
-    )
-    try {
-      const { error } = await supabase.from('contacts').insert(row)
-      if (error) throw error
-    } catch (e: any) {
-      console.error('Supabase error:', e?.message ?? e)
-      throw createError({ statusCode: 500, message: 'Ошибка сохранения заявки' })
-    }
+  try {
+    await ensureTable()
+    await insertContactRf({ name: nameS, phone: phoneS, email: emailS, message: messageS, item_title: itemTitleS, item_price: itemPriceS })
+  } catch (e: any) {
+    console.error('DB error:', e?.message ?? e)
+    throw createError({ statusCode: 500, message: 'Ошибка сохранения заявки' })
   }
 
   const lines = [

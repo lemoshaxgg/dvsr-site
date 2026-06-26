@@ -1,14 +1,13 @@
-import { createClient } from '@supabase/supabase-js'
+import { getRfPool, ensureCatalogCmsTable } from '~/server/utils/rfdb'
 import { items as jsItems, categories as jsCategories, subcategories as jsSubs } from '~/data/catalog.js'
 
-export default defineEventHandler(async (event) => {
-  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!)
-
-  // Load CMS overrides/additions (table may not exist yet — handle gracefully)
+export default defineEventHandler(async () => {
   let overrides: Record<string, unknown>[] = []
   try {
-    const { data } = await supabase.from('catalog_cms').select('*')
-    overrides = data || []
+    await ensureCatalogCmsTable()
+    const pool = getRfPool()
+    const { rows } = await pool.query('SELECT * FROM catalog_cms')
+    overrides = rows
   } catch {}
 
   const overrideMap = new Map(
