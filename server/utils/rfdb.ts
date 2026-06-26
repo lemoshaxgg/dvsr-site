@@ -1,29 +1,29 @@
 import { Pool } from 'pg'
 
 // Подключение к РФ-Postgres (Timeweb Cloud, 152-ФЗ).
-// ENV:
-//   RF_DATABASE_URL — строка подключения postgres://user:pass@host:5432/db
-//   RF_DB_CA        — (опц.) PEM-сертификат CA провайдера
+// ENV (отдельные переменные, без URL-кодирования пароля):
+//   RF_DB_HOST, RF_DB_PORT, RF_DB_NAME, RF_DB_USER, RF_DB_PASSWORD
 
 let pool: Pool | null = null
 
 export function isRfDbConfigured(): boolean {
-  return !!process.env.RF_DATABASE_URL
+  return !!process.env.RF_DB_HOST
 }
 
 export function getRfPool(): Pool { return getPool() }
 
 function getPool(): Pool {
   if (pool) return pool
-  const ca = process.env.RF_DB_CA
   pool = new Pool({
-    connectionString: process.env.RF_DATABASE_URL,
+    host: process.env.RF_DB_HOST,
+    port: Number(process.env.RF_DB_PORT || 5432),
+    database: process.env.RF_DB_NAME,
+    user: process.env.RF_DB_USER,
+    password: process.env.RF_DB_PASSWORD,
     max: 3,
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 10000,
-    ssl: ca
-      ? { ca, rejectUnauthorized: true }
-      : { rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: false },
   })
   return pool
 }
