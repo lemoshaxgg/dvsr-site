@@ -33,7 +33,8 @@ let cmsTableReady = false
 
 export async function ensureTable(): Promise<void> {
   if (tableReady) return
-  await getPool().query(`
+  const db = getPool()
+  await db.query(`
     CREATE TABLE IF NOT EXISTS contacts (
       id          BIGSERIAL PRIMARY KEY,
       name        TEXT NOT NULL,
@@ -48,6 +49,11 @@ export async function ensureTable(): Promise<void> {
       created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `)
+  await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS item_title TEXT`)
+  await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS item_price TEXT`)
+  await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'new'`)
+  await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT ''`)
+  await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`)
   tableReady = true
 }
 
