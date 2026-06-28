@@ -23,7 +23,7 @@ function getPool(): Pool {
     max: 3,
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 10000,
-    ssl: { rejectUnauthorized: false },
+    ssl: false,
   })
   return pool
 }
