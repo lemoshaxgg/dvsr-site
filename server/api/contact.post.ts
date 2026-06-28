@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
     await insertContactRf({ name: nameS, phone: phoneS, email: emailS, message: messageS, item_title: itemTitleS, item_price: itemPriceS })
   } catch (e: any) {
     console.error('DB error:', e?.message ?? e)
-    throw createError({ statusCode: 500, message: 'Ошибка сохранения заявки' })
+    throw createError({ statusCode: 500, message: e?.message ?? 'Ошибка сохранения заявки' })
   }
 
   const lines = [
