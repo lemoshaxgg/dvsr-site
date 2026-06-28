@@ -95,8 +95,9 @@ export default defineEventHandler(async (event) => {
     await ensureTable()
     await insertContactRf({ name: nameS, phone: phoneS, email: emailS, message: messageS, item_title: itemTitleS, item_price: itemPriceS })
   } catch (e: any) {
-    console.error('DB error:', e?.message ?? e)
-    throw createError({ statusCode: 500, message: e?.message ?? 'Ошибка сохранения заявки' })
+    const errMsg = e?.message || (typeof e === 'string' ? e : JSON.stringify(e)) || 'unknown'
+    console.error('DB error:', errMsg)
+    throw createError({ statusCode: 500, message: errMsg })
   }
 
   const lines = [
