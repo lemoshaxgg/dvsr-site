@@ -97,7 +97,7 @@ export default defineEventHandler(async (event) => {
   } catch (e: any) {
     const errMsg = e?.message || (typeof e === 'string' ? e : JSON.stringify(e)) || 'unknown'
     console.error('DB error:', errMsg)
-    throw createError({ statusCode: 500, message: errMsg })
+    throw createError({ statusCode: 500, message: 'Не удалось сохранить заявку. Попробуйте позже или позвоните нам.' })
   }
 
   const lines = [
