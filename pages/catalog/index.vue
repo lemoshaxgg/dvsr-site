@@ -649,21 +649,21 @@ const { addItem, hasItem } = useCart()
 
 const items = reactive([...staticItems])
 
-// Партнёрские каталоги — lazy после первого рендера
-const catalogPending = ref(true)
-if (import.meta.client) {
-  const loadJson = (url) => fetch(url).then(r => r.ok ? r.json() : []).catch(() => [])
-  Promise.all([
-    loadJson('/data/catalog-items.json'),
-    loadJson('/data/catalog-sig.json'),
-    loadJson('/data/catalog-vk.json'),
-    loadJson('/data/catalog-pd.json'),
-  ]).then(([cable, sig, vk, pd]) => {
-    items.push(...cable, ...sig, ...vk, ...pd)
-  }).catch(() => {}).finally(() => {
-    catalogPending.value = false
-  })
-}
+// Партнёрские каталоги — lazy, не блокируют первый рендер
+const _loaded = reactive({ cable: false, sig: false, vk: false, pd: false })
+const catalogPending = computed(() => !_loaded.cable || !_loaded.sig || !_loaded.vk || !_loaded.pd)
+
+const { data: _cableData } = await useFetch('/data/catalog-items.json', { lazy: true, server: false, default: () => [] })
+watch(_cableData, val => { if (val?.length && !_loaded.cable) { _loaded.cable = true; val.forEach(i => items.push(i)) } }, { immediate: true })
+
+const { data: _sigData } = await useFetch('/data/catalog-sig.json', { lazy: true, server: false, default: () => [] })
+watch(_sigData, val => { if (val?.length && !_loaded.sig) { _loaded.sig = true; val.forEach(i => items.push(i)) } }, { immediate: true })
+
+const { data: _vkData } = await useFetch('/data/catalog-vk.json', { lazy: true, server: false, default: () => [] })
+watch(_vkData, val => { if (val?.length && !_loaded.vk) { _loaded.vk = true; val.forEach(i => items.push(i)) } }, { immediate: true })
+
+const { data: _pdData } = await useFetch('/data/catalog-pd.json', { lazy: true, server: false, default: () => [] })
+watch(_pdData, val => { if (val?.length && !_loaded.pd) { _loaded.pd = true; val.forEach(i => items.push(i)) } }, { immediate: true })
 
 useHead({ title: 'Каталог: заборы 3D, сваи, септики, стройматериалы — ДСР Владивосток' })
 useSeoMeta({
@@ -731,7 +731,9 @@ const failedPrimaryPhotos = reactive(new Set())
 const failedFallbackPhotos = reactive(new Set())
 
 function productPhoto(item) {
-  // Внешнее фото (CDN Сигнала) — напрямую, без products/{id}.jpg
+  // Для vk_ товаров — скачанные фото содержат логотип поставщика, не показываем
+  if (typeof item.category === 'string' && item.category.startsWith('vk_')) return null
+  // Внешнее фото (CDN Сигнала, Интеркабель и др.)
   if (item.photo && /^https?:/.test(item.photo)) {
     return failedFallbackPhotos.has(item.id) ? null : item.photo
   }
@@ -1991,7 +1993,7 @@ async function submitOrder() {
 .catalog-item__placeholder {
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-height: 120px;
   overflow: hidden;
 }
 .catalog-item__placeholder-img {
@@ -2009,7 +2011,7 @@ async function submitOrder() {
 .catalog-item__placeholder-empty {
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
