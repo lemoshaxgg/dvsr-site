@@ -33,23 +33,22 @@
 </template>
 
 <script setup>
-const { data: me, error: meError } = await useFetch('/api/admin/me', {
-  key: 'admin-me',
-  default: () => null,
-})
+// useCookie читается синхронно в SSR (из заголовков запроса) и на клиенте
+const roleCookie = useCookie('admin_role')
+const isAdmin = computed(() => roleCookie.value === 'admin')
 
-if (meError.value) {
-  await navigateTo('/admin')
-}
-
-watch(meError, async (err) => {
-  if (err) await navigateTo('/admin')
-})
-
-const isAdmin = computed(() => me.value?.role === 'admin')
+const me = ref(null)
 const newCount = ref(0)
 
 onMounted(async () => {
+  try {
+    me.value = await $fetch('/api/admin/me')
+    // Синхронизировать куку роли (для существующих сессий без admin_role куки)
+    if (me.value?.role) roleCookie.value = me.value.role
+  } catch {
+    await navigateTo('/admin')
+    return
+  }
   try {
     const leads = await $fetch('/api/admin/leads?status=new')
     newCount.value = leads.length
@@ -58,7 +57,6 @@ onMounted(async () => {
 
 async function logout() {
   await $fetch('/api/admin/logout', { method: 'POST' })
-  clearNuxtData('admin-me')
   await navigateTo('/admin')
 }
 </script>

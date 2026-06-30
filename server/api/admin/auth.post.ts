@@ -23,5 +23,13 @@ export default defineEventHandler(async (event) => {
     path: '/',
   })
 
+  setCookie(event, 'admin_role', user.role, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 24 * 30,
+    path: '/',
+  })
+
   return { ok: true, role: user.role, name: user.name }
 })
