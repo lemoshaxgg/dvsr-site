@@ -10,10 +10,10 @@
           <span class="adm__link-icon">📋</span> Заявки
           <span v-if="newCount" class="adm__badge">{{ newCount }}</span>
         </NuxtLink>
-        <NuxtLink v-if="isAdmin" to="/admin/catalog" class="adm__link" active-class="adm__link--active">
+        <NuxtLink v-show="isAdmin" to="/admin/catalog" class="adm__link" active-class="adm__link--active">
           <span class="adm__link-icon">📦</span> Каталог
         </NuxtLink>
-        <NuxtLink v-if="isAdmin" to="/admin/users" class="adm__link" active-class="adm__link--active">
+        <NuxtLink v-show="isAdmin" to="/admin/users" class="adm__link" active-class="adm__link--active">
           <span class="adm__link-icon">👥</span> Сотрудники
         </NuxtLink>
       </nav>
