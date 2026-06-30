@@ -2,16 +2,16 @@
 // Автогенерация. ID: 20000–29999
 
 export const vkCategories = [
-  {id: "vk_auto", label: "Автоматика", icon: "⚡"},
-  {id: "vk_cable_access", label: "Изделия для прокладки кабеля", icon: "📦"},
-  {id: "vk_tools", label: "Инструмент электромонтажный", icon: "🔧"},
-  {id: "vk_climate", label: "Климатическое оборудование", icon: "❄️"},
-  {id: "vk_lighting", label: "Светотехника", icon: "💡"},
-  {id: "vk_security", label: "Системы безопасности", icon: "🔒"},
-  {id: "vk_shields", label: "Щиты и боксы", icon: "🗄️"},
-  {id: "vk_electro", label: "Электроустановочные изделия", icon: "🔌"},
-  {id: "vk_soldering", label: "Паяльное оборудование и химия", icon: "🔥"},
-  {id: "vk_meters", label: "Приборы контроля, учёта и измерения", icon: "📊"},
+  {id: "vk_auto",         label: "Автоматика",                          icon: "⚡",  img: "/catalog/products/20000.jpg"},
+  {id: "vk_cable_access", label: "Изделия для прокладки кабеля",        icon: "📦",  img: "/catalog/products/20164.jpg"},
+  {id: "vk_tools",        label: "Инструмент электромонтажный",         icon: "🔧",  img: "/catalog/products/20180.jpg"},
+  {id: "vk_climate",      label: "Климатическое оборудование",           icon: "❄️"},
+  {id: "vk_lighting",     label: "Светотехника",                        icon: "💡"},
+  {id: "vk_security",     label: "Системы безопасности",                icon: "🔒",  img: "/catalog/products/20372.jpg"},
+  {id: "vk_shields",      label: "Щиты и боксы",                       icon: "🗄️", img: "/catalog/products/20230.jpg"},
+  {id: "vk_electro",      label: "Электроустановочные изделия",         icon: "🔌",  img: "/catalog/products/20137.jpg"},
+  {id: "vk_soldering",    label: "Паяльное оборудование и химия",       icon: "🔥"},
+  {id: "vk_meters",       label: "Приборы контроля, учёта и измерения", icon: "📊"},
 ]
 
 export const vkSubcategories = {
