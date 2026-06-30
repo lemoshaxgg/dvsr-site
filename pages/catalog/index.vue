@@ -648,22 +648,27 @@ const sortOptions = [
 const { addItem, hasItem } = useCart()
 
 const items = reactive([...staticItems])
+const catalogPending = ref(true)
 
-// Партнёрские каталоги — lazy, не блокируют первый рендер
-const _loaded = reactive({ cable: false, sig: false, vk: false, pd: false })
-const catalogPending = computed(() => !_loaded.cable || !_loaded.sig || !_loaded.vk || !_loaded.pd)
-
-const { data: _cableData } = await useFetch('/data/catalog-items.json', { lazy: true, server: false, default: () => [] })
-watch(_cableData, val => { if (val?.length && !_loaded.cable) { _loaded.cable = true; val.forEach(i => items.push(i)) } }, { immediate: true })
-
-const { data: _sigData } = await useFetch('/data/catalog-sig.json', { lazy: true, server: false, default: () => [] })
-watch(_sigData, val => { if (val?.length && !_loaded.sig) { _loaded.sig = true; val.forEach(i => items.push(i)) } }, { immediate: true })
-
-const { data: _vkData } = await useFetch('/data/catalog-vk.json', { lazy: true, server: false, default: () => [] })
-watch(_vkData, val => { if (val?.length && !_loaded.vk) { _loaded.vk = true; val.forEach(i => items.push(i)) } }, { immediate: true })
-
-const { data: _pdData } = await useFetch('/data/catalog-pd.json', { lazy: true, server: false, default: () => [] })
-watch(_pdData, val => { if (val?.length && !_loaded.pd) { _loaded.pd = true; val.forEach(i => items.push(i)) } }, { immediate: true })
+onMounted(async () => {
+  const loadJson = async (url) => {
+    try {
+      const r = await fetch(url)
+      return r.ok ? r.json() : []
+    } catch { return [] }
+  }
+  const [cable, sig, vk, pd] = await Promise.all([
+    loadJson('/data/catalog-items.json'),
+    loadJson('/data/catalog-sig.json'),
+    loadJson('/data/catalog-vk.json'),
+    loadJson('/data/catalog-pd.json'),
+  ])
+  cable.forEach(i => items.push(i))
+  sig.forEach(i => items.push(i))
+  vk.forEach(i => items.push(i))
+  pd.forEach(i => items.push(i))
+  catalogPending.value = false
+})
 
 useHead({ title: 'Каталог: заборы 3D, сваи, септики, стройматериалы — ДСР Владивосток' })
 useSeoMeta({
