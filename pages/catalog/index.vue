@@ -649,24 +649,20 @@ const { addItem, hasItem } = useCart()
 
 const items = reactive([...staticItems])
 
-// Партнёрские каталоги грузятся лениво (не блокируют первый рендер)
+// Партнёрские каталоги — lazy после первого рендера
 const catalogPending = ref(true)
-const loadPartnerData = async () => {
-  try {
-    const [cable, sig, vk, pd] = await Promise.all([
-      $fetch('/data/catalog-items.json').catch(() => []),
-      $fetch('/data/catalog-sig.json').catch(() => []),
-      $fetch('/data/catalog-vk.json').catch(() => []),
-      $fetch('/data/catalog-pd.json').catch(() => []),
-    ])
-    items.push(...cable, ...sig, ...vk, ...pd)
-  } finally {
-    catalogPending.value = false
-  }
-}
 if (import.meta.client) {
-  // Запускаем после первого рендера чтобы не блокировать LCP
-  setTimeout(loadPartnerData, 100)
+  const loadJson = (url) => fetch(url).then(r => r.ok ? r.json() : []).catch(() => [])
+  Promise.all([
+    loadJson('/data/catalog-items.json'),
+    loadJson('/data/catalog-sig.json'),
+    loadJson('/data/catalog-vk.json'),
+    loadJson('/data/catalog-pd.json'),
+  ]).then(([cable, sig, vk, pd]) => {
+    items.push(...cable, ...sig, ...vk, ...pd)
+  }).catch(() => {}).finally(() => {
+    catalogPending.value = false
+  })
 }
 
 useHead({ title: 'Каталог: заборы 3D, сваи, септики, стройматериалы — ДСР Владивосток' })
