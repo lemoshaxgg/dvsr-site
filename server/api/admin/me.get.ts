@@ -1,17 +1,15 @@
-import { createHmac, timingSafeEqual } from 'crypto'
 import { getCookie } from 'h3'
+import { getUserById } from '~/server/utils/rfdb'
+import { verifySession } from '~/server/utils/adminAuth'
 
-export default defineEventHandler((event) => {
-  const adminPassword = process.env.ADMIN_PASSWORD
-  if (!adminPassword) throw createError({ statusCode: 503 })
+export default defineEventHandler(async (event) => {
+  if (!process.env.ADMIN_PASSWORD) throw createError({ statusCode: 503 })
 
-  const cookie = getCookie(event, 'admin_sid') || ''
-  const expected = createHmac('sha256', adminPassword).update('dsr-admin').digest('hex')
+  const userId = verifySession(getCookie(event, 'admin_sid') || '')
+  if (!userId) throw createError({ statusCode: 401 })
 
-  const a = Buffer.from(cookie.padEnd(expected.length, '\0').slice(0, expected.length))
-  const b = Buffer.from(expected)
-  const valid = cookie.length === expected.length && timingSafeEqual(a, b)
+  const user = await getUserById(userId)
+  if (!user || !user.is_active) throw createError({ statusCode: 401 })
 
-  if (!valid) throw createError({ statusCode: 401 })
-  return { ok: true }
+  return { id: user.id, login: user.login, name: user.name, role: user.role }
 })

@@ -10,11 +10,18 @@
           <span class="adm__link-icon">📋</span> Заявки
           <span v-if="newCount" class="adm__badge">{{ newCount }}</span>
         </NuxtLink>
-        <NuxtLink to="/admin/catalog" class="adm__link" active-class="adm__link--active">
+        <NuxtLink v-if="isAdmin" to="/admin/catalog" class="adm__link" active-class="adm__link--active">
           <span class="adm__link-icon">📦</span> Каталог
+        </NuxtLink>
+        <NuxtLink v-if="isAdmin" to="/admin/users" class="adm__link" active-class="adm__link--active">
+          <span class="adm__link-icon">👥</span> Сотрудники
         </NuxtLink>
       </nav>
       <div class="adm__bottom">
+        <div v-if="me" class="adm__user">
+          <span class="adm__user-name">{{ me.name || me.login }}</span>
+          <span class="adm__user-role">{{ isAdmin ? 'Владелец' : 'Менеджер' }}</span>
+        </div>
         <a href="/" target="_blank" class="adm__site-link">→ Открыть сайт</a>
         <button class="adm__logout" @click="logout">Выйти</button>
       </div>
@@ -27,11 +34,13 @@
 
 <script setup>
 const newCount = ref(0)
+const me = ref(null)
+const isAdmin = computed(() => me.value?.role === 'admin')
 
 onMounted(async () => {
   // Check auth
   try {
-    await $fetch('/api/admin/me')
+    me.value = await $fetch('/api/admin/me')
   } catch {
     await navigateTo('/admin')
     return
@@ -129,6 +138,14 @@ body { margin: 0; }
   flex-direction: column;
   gap: 0.5rem;
 }
+.adm__user {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0.35rem;
+}
+.adm__user-name { color: #ddd; font-size: 0.85rem; font-weight: 600; }
+.adm__user-role { color: #e6b800; font-size: 0.72rem; }
 .adm__site-link {
   color: #555;
   font-size: 0.78rem;

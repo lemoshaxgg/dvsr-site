@@ -1,16 +1,21 @@
-import { createHmac } from 'crypto'
+import { getUserByLogin } from '~/server/utils/rfdb'
+import { verifyPassword, signSession } from '~/server/utils/adminAuth'
 
 export default defineEventHandler(async (event) => {
-  const { password } = await readBody(event) || {}
-  const adminPassword = process.env.ADMIN_PASSWORD
+  const { login, password } = (await readBody(event)) || {}
 
-  if (!adminPassword) throw createError({ statusCode: 503, message: 'Панель не настроена' })
-  if (!password || password !== adminPassword)
-    throw createError({ statusCode: 401, message: 'Неверный пароль' })
+  if (!process.env.ADMIN_PASSWORD) throw createError({ statusCode: 503, message: 'Панель не настроена' })
+  if (!login || !password) throw createError({ statusCode: 400, message: 'Введите логин и пароль' })
 
-  const token = createHmac('sha256', adminPassword).update('dsr-admin').digest('hex')
+  const user = await getUserByLogin(String(login).trim().toLowerCase())
+  if (!user || !verifyPassword(String(password), user.pass_hash)) {
+    throw createError({ statusCode: 401, message: 'Неверный логин или пароль' })
+  }
+  if (!user.is_active) {
+    throw createError({ statusCode: 403, message: 'Доступ отключён. Обратитесь к администратору.' })
+  }
 
-  setCookie(event, 'admin_sid', token, {
+  setCookie(event, 'admin_sid', signSession(user.id), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
@@ -18,5 +23,5 @@ export default defineEventHandler(async (event) => {
     path: '/',
   })
 
-  return { ok: true }
+  return { ok: true, role: user.role, name: user.name }
 })

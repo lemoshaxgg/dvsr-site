@@ -1,4 +1,5 @@
 import { Pool } from 'pg'
+import { hashPassword } from './adminAuth'
 
 // Подключение к РФ-Postgres (Timeweb Cloud, 152-ФЗ).
 // ENV (отдельные переменные, без URL-кодирования пароля):
@@ -92,4 +93,101 @@ export async function insertContactRf(row: ContactRow): Promise<void> {
      VALUES ($1, $2, $3, $4, $5, $6)`,
     [row.name, row.phone, row.email, row.message, row.item_title, row.item_price],
   )
+}
+
+// ── Аккаунты администраторов и менеджеров ──
+let usersTableReady = false
+
+export interface AdminUser {
+  id: number
+  login: string
+  name: string
+  pass_hash: string
+  role: string
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export async function ensureAdminUsersTable(): Promise<void> {
+  if (usersTableReady) return
+  const db = getPool()
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id         BIGSERIAL PRIMARY KEY,
+      login      TEXT UNIQUE NOT NULL,
+      name       TEXT NOT NULL DEFAULT '',
+      pass_hash  TEXT NOT NULL,
+      role       TEXT NOT NULL DEFAULT 'manager',
+      is_active  BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ
+    )
+  `)
+  // Bootstrap: если нет ни одного владельца — создать из ADMIN_PASSWORD (логин admin)
+  const adminPass = process.env.ADMIN_PASSWORD
+  if (adminPass) {
+    const { rows } = await db.query(`SELECT COUNT(*)::int AS n FROM admin_users WHERE role = 'admin'`)
+    if (rows[0].n === 0) {
+      await db.query(
+        `INSERT INTO admin_users (login, name, pass_hash, role, is_active)
+         VALUES ($1, $2, $3, 'admin', true)
+         ON CONFLICT (login) DO NOTHING`,
+        ['admin', 'Владелец', hashPassword(adminPass)],
+      )
+    }
+  }
+  usersTableReady = true
+}
+
+export async function getUserByLogin(login: string): Promise<AdminUser | null> {
+  await ensureAdminUsersTable()
+  const { rows } = await getPool().query('SELECT * FROM admin_users WHERE login = $1', [login])
+  return rows[0] || null
+}
+
+export async function getUserById(id: number): Promise<AdminUser | null> {
+  await ensureAdminUsersTable()
+  const { rows } = await getPool().query('SELECT * FROM admin_users WHERE id = $1', [id])
+  return rows[0] || null
+}
+
+export async function listUsers(): Promise<AdminUser[]> {
+  await ensureAdminUsersTable()
+  const { rows } = await getPool().query(
+    'SELECT id, login, name, role, is_active, created_at FROM admin_users ORDER BY created_at ASC',
+  )
+  return rows
+}
+
+export async function createUser(u: { login: string; name: string; pass_hash: string; role: string }): Promise<void> {
+  await ensureAdminUsersTable()
+  await getPool().query(
+    `INSERT INTO admin_users (login, name, pass_hash, role, is_active)
+     VALUES ($1, $2, $3, $4, true)`,
+    [u.login, u.name, u.pass_hash, u.role],
+  )
+}
+
+export async function updateUser(
+  id: number,
+  fields: { name?: string; pass_hash?: string; role?: string; is_active?: boolean },
+): Promise<void> {
+  await ensureAdminUsersTable()
+  const sets: string[] = []
+  const vals: unknown[] = []
+  let i = 1
+  if (fields.name !== undefined)      { sets.push(`name = $${i++}`); vals.push(fields.name) }
+  if (fields.pass_hash !== undefined) { sets.push(`pass_hash = $${i++}`); vals.push(fields.pass_hash) }
+  if (fields.role !== undefined)      { sets.push(`role = $${i++}`); vals.push(fields.role) }
+  if (fields.is_active !== undefined) { sets.push(`is_active = $${i++}`); vals.push(fields.is_active) }
+  if (!sets.length) return
+  sets.push(`updated_at = now()`)
+  vals.push(id)
+  await getPool().query(`UPDATE admin_users SET ${sets.join(', ')} WHERE id = $${i}`, vals)
+}
+
+export async function deleteUser(id: number): Promise<void> {
+  await ensureAdminUsersTable()
+  await getPool().query('DELETE FROM admin_users WHERE id = $1', [id])
 }

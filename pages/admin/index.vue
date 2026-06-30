@@ -5,16 +5,24 @@
       <h1 class="login__title">Вход в панель</h1>
       <form class="login__form" @submit.prevent="submit">
         <input
+          v-model="login"
+          type="text"
+          class="login__input"
+          placeholder="Логин"
+          autocomplete="username"
+          :disabled="loading"
+          autofocus
+        />
+        <input
           v-model="password"
           type="password"
           class="login__input"
           placeholder="Пароль"
           autocomplete="current-password"
           :disabled="loading"
-          autofocus
         />
         <p v-if="error" class="login__error">{{ error }}</p>
-        <button class="login__btn" type="submit" :disabled="loading || !password">
+        <button class="login__btn" type="submit" :disabled="loading || !login || !password">
           {{ loading ? 'Вход...' : 'Войти' }}
         </button>
       </form>
@@ -25,6 +33,7 @@
 <script setup>
 definePageMeta({ layout: false })
 
+const login = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
@@ -41,10 +50,10 @@ async function submit() {
   loading.value = true
   error.value = ''
   try {
-    await $fetch('/api/admin/auth', { method: 'POST', body: { password: password.value } })
+    await $fetch('/api/admin/auth', { method: 'POST', body: { login: login.value, password: password.value } })
     await navigateTo('/admin/crm')
   } catch (e) {
-    error.value = e?.data?.message || 'Неверный пароль'
+    error.value = e?.data?.message || 'Неверный логин или пароль'
   } finally {
     loading.value = false
   }
