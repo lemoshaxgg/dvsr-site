@@ -33,19 +33,23 @@
 </template>
 
 <script setup>
-const newCount = ref(0)
-const me = ref(null)
+const { data: me, error: meError } = await useFetch('/api/admin/me', {
+  key: 'admin-me',
+  default: () => null,
+})
+
+if (meError.value) {
+  await navigateTo('/admin')
+}
+
+watch(meError, async (err) => {
+  if (err) await navigateTo('/admin')
+})
+
 const isAdmin = computed(() => me.value?.role === 'admin')
+const newCount = ref(0)
 
 onMounted(async () => {
-  // Check auth
-  try {
-    me.value = await $fetch('/api/admin/me')
-  } catch {
-    await navigateTo('/admin')
-    return
-  }
-  // Badge count
   try {
     const leads = await $fetch('/api/admin/leads?status=new')
     newCount.value = leads.length
@@ -54,6 +58,7 @@ onMounted(async () => {
 
 async function logout() {
   await $fetch('/api/admin/logout', { method: 'POST' })
+  clearNuxtData('admin-me')
   await navigateTo('/admin')
 }
 </script>
