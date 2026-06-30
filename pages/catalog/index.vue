@@ -2030,9 +2030,10 @@ async function submitOrder() {
 .catalog-item__desc { font-size: 0.875rem; color: #777; line-height: 1.7; flex: 1; }
 
 .catalog-item__footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap; }
-.catalog-item__price-block { display: flex; flex-direction: column; gap: 0.1rem; }
+.catalog-item__price-block { display: flex; flex-direction: column; gap: 0.1rem; flex: 1 1 auto; min-width: 0; }
 .catalog-item__price-label { font-size: 0.68rem; color: #444; text-transform: uppercase; letter-spacing: 0.1em; }
 .catalog-item__price { font-size: 1.15rem; font-weight: 700; color: #e6b800; }
+.catalog-item__price--ask { font-size: 0.8rem; font-weight: 600; line-height: 1.2; color: #aaa; white-space: normal; }
 
 .catalog-item__btn {
   position: relative;
@@ -2048,6 +2049,7 @@ async function submitOrder() {
   font-family: inherit;
   transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .catalog-item__btn::after {
   content: '';
@@ -2739,7 +2741,7 @@ async function submitOrder() {
 .catalog-item--grid .catalog-item__title { font-size: 0.9rem; }
 .catalog-item--grid .catalog-item__desc  { font-size: 0.78rem; -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
 .catalog-item--grid .catalog-item__footer { flex-wrap: nowrap; gap: 0.5rem; }
-.catalog-item--grid .catalog-item__btn { font-size: 0.78rem; padding: 0.5rem 0.8rem; flex: 1; }
+.catalog-item--grid .catalog-item__btn { font-size: 0.78rem; padding: 0.5rem 0.8rem; flex: 0 0 auto; }
 
 /* ── Compact режим (мелкая плитка 4-5 колонок) ── */
 .catalog__list--compact {
