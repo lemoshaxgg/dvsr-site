@@ -663,10 +663,9 @@ onMounted(async () => {
     loadJson('/data/catalog-vk.json'),
     loadJson('/data/catalog-pd.json'),
   ])
-  cable.forEach(i => items.push(i))
-  sig.forEach(i => items.push(i))
-  vk.forEach(i => items.push(i))
-  pd.forEach(i => items.push(i))
+  const all = [...cable, ...sig, ...vk, ...pd]
+  // один splice вместо тысяч push — реактивность срабатывает 1 раз
+  items.splice(items.length, 0, ...all)
   catalogPending.value = false
 })
 
@@ -964,14 +963,14 @@ const popularItems = computed(() => {
   return picked.length >= 3 ? picked : items.slice(0, 5)
 })
 
-// Предвычисляем счётчики один раз — O(n) при загрузке, O(1) при рендере
-const _catCounts = (() => {
+// Счётчики по категориям — реактивны, пересчитываются при дозагрузке партнёрских товаров
+const _catCounts = computed(() => {
   const map = { all: items.length }
   for (const item of items) map[item.category] = (map[item.category] || 0) + 1
   return map
-})()
+})
 function countByCategory(catId) {
-  return _catCounts[catId] || 0
+  return _catCounts.value[catId] || 0
 }
 
 const currentSubs = computed(() =>
