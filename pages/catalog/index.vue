@@ -648,8 +648,26 @@ const sortOptions = [
 const { addItem, hasItem } = useCart()
 
 const items = reactive([...staticItems])
-const { data: dynamicItemsData, pending: catalogPending } = await useFetch('/data/catalog-items.json', { lazy: true, server: false, default: () => [] })
-watch(dynamicItemsData, (val) => { if (val?.length) items.push(...val) }, { immediate: true })
+
+// Партнёрские каталоги грузятся лениво (не блокируют первый рендер)
+const catalogPending = ref(true)
+const loadPartnerData = async () => {
+  try {
+    const [cable, sig, vk, pd] = await Promise.all([
+      $fetch('/data/catalog-items.json').catch(() => []),
+      $fetch('/data/catalog-sig.json').catch(() => []),
+      $fetch('/data/catalog-vk.json').catch(() => []),
+      $fetch('/data/catalog-pd.json').catch(() => []),
+    ])
+    items.push(...cable, ...sig, ...vk, ...pd)
+  } finally {
+    catalogPending.value = false
+  }
+}
+if (import.meta.client) {
+  // Запускаем после первого рендера чтобы не блокировать LCP
+  setTimeout(loadPartnerData, 100)
+}
 
 useHead({ title: 'Каталог: заборы 3D, сваи, септики, стройматериалы — ДСР Владивосток' })
 useSeoMeta({

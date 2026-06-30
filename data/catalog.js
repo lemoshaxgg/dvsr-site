@@ -459,20 +459,49 @@ export const items = [
   { id: 159, category: 'services', icon: '🚛', title: 'Самосвал',                            price: 'Уточнить', basePrice: null, unit: 'рейс', description: 'Вывоз грунта, доставка материалов. Собственный парк.' },
 ]
 
-// ── Каталог Сигнал (signaldv.ru) — 2213 товаров, автоген. import хойстится наверх ──
-import { sigCategories, sigItems } from './catalog-sig.js'
-categories.push(...sigCategories)
-items.push(...sigItems)
+// ── Партнёрские каталоги — только категории/подкатегории (товары грузятся лениво из JSON) ──
 
-// ── Восток Кабель (vostokkabel-vl.ru) — электротовары ──
-import { vkCategories, vkSubcategories, vkItems } from './catalog-vostokkabel.js'
-categories.push(...vkCategories)
-Object.assign(subcategories, vkSubcategories)
-items.push(...vkItems)
+// Сигнал (signaldv.ru)
+categories.push(
+  {id:"sigbiz",   label:"Оборудование для бизнеса",        icon:"🏢"},
+  {id:"sigcctv",  label:"Видеонаблюдение и СКУД",           icon:"📹"},
+  {id:"siglandsc",label:"Благоустройство территории",        icon:"🌳"},
+  {id:"sigroad",  label:"Дорожное движение и разметка",      icon:"🚧"},
+  {id:"sigfire",  label:"Противопожарное оборудование",      icon:"🧯"},
+  {id:"sigppe",   label:"Средства защиты (СИЗ)",             icon:"🦺"},
+  {id:"sigtanks", label:"Ёмкости и еврокубы",               icon:"🛢️"},
+  {id:"sighome",  label:"Товары для дома и сада",            icon:"🏡"},
+  {id:"sigsite",  label:"Оборудование для стройплощадок",    icon:"🏗️"},
+  {id:"sigtech",  label:"Технические материалы",             icon:"🔧"},
+  {id:"sigmarine",label:"Морское оборудование",              icon:"⚓"},
+  {id:"sigfood",  label:"Пищевое производство",              icon:"🍽️"},
+)
 
-// ── Пластпродукт (plastdv.ru) — трубы ПЭ, фитинги, оборудование ──
-import { pdCategories, pdSubcategories, pdItems } from './catalog-plastdv.js'
-categories.push(...pdCategories)
-Object.assign(subcategories, pdSubcategories)
-items.push(...pdItems)
+// Восток Кабель (vostokkabel-vl.ru)
+categories.push(
+  {id:"vk_auto",        label:"Автоматика",                          icon:"⚡",  img:"/catalog/products/20000.jpg"},
+  {id:"vk_cable_access",label:"Изделия для прокладки кабеля",        icon:"📦",  img:"/catalog/products/20164.jpg"},
+  {id:"vk_tools",       label:"Инструмент электромонтажный",         icon:"🔧",  img:"/catalog/products/20180.jpg"},
+  {id:"vk_climate",     label:"Климатическое оборудование",           icon:"❄️"},
+  {id:"vk_lighting",    label:"Светотехника",                        icon:"💡"},
+  {id:"vk_security",    label:"Системы безопасности",                icon:"🔒",  img:"/catalog/products/20372.jpg"},
+  {id:"vk_shields",     label:"Щиты и боксы",                       icon:"🗄️", img:"/catalog/products/20230.jpg"},
+  {id:"vk_electro",     label:"Электроустановочные изделия",         icon:"🔌",  img:"/catalog/products/20137.jpg"},
+  {id:"vk_soldering",   label:"Паяльное оборудование и химия",       icon:"🔥"},
+  {id:"vk_meters",      label:"Приборы контроля, учёта и измерения", icon:"📊"},
+)
+
+// Пластпродукт (plastdv.ru)
+categories.push(
+  {id:"pd_pipes",    label:"Трубы ПЭ",                 icon:"🔵"},
+  {id:"pd_fittings", label:"Фитинги ПЭ",               icon:"🔩"},
+  {id:"pd_armature", label:"Арматура ПЭ (фланцы)",      icon:"⚙️"},
+  {id:"pd_weld",     label:"Сварочное оборудование ПЭ", icon:"🔥"},
+)
+Object.assign(subcategories, {
+  pd_pipes:    [{id:"pd_pipe_water",label:"Трубы для водоснабжения"},{id:"pd_pipe_gas",label:"Трубы для газоснабжения"},{id:"pd_pipe_corr",label:"Трубы гофрированные двухслойные SN8"}],
+  pd_fittings: [{id:"pd_fit_elw",label:"Электросварные фитинги"},{id:"pd_fit_comp",label:"Компрессионные фитинги"},{id:"pd_fit_weld",label:"Сварные фитинги"},{id:"pd_fit_corr",label:"Гофрированный фитинг"},{id:"pd_fit_cast",label:"Литой фитинг"},{id:"pd_fit_muff",label:"Муфта для прохода ПЭ через ЖБ"},{id:"pd_fit_steel",label:"Неразъёмное соединение ПЭ-сталь"}],
+  pd_armature: [{id:"pd_arm_flange",label:"Фланцы ПЭ"}],
+  pd_weld:     [{id:"pd_weld_hydr",label:"Гидравлические сварочные аппараты"},{id:"pd_weld_mech",label:"Механические сварочные аппараты"},{id:"pd_weld_other",label:"Дополнительное оборудование"}],
+})
 
