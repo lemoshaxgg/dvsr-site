@@ -1,9 +1,6 @@
 <template>
   <div class="adm">
-    <div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#e6b800;color:#000;padding:6px;text-align:center;font-weight:bold;font-size:13px">
-      LAYOUT OK · меню: {{ me?.role || 'загрузка...' }}
-    </div>
-    <aside class="adm__side" style="top:30px">
+    <aside class="adm__side">
       <div class="adm__brand">
         <span class="adm__brand-icon">⚙</span>
         <span class="adm__brand-txt">ДСР Admin</span>

@@ -36,7 +36,9 @@
     <!-- NavBar живёт вне transition — никогда не мигает -->
     <NavBar v-if="!isAdmin" />
 
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
     <SiteFooter v-if="!isAdmin" />
     <CookieBanner v-if="!isAdmin" />
     <TelegramBtn v-if="!isAdmin" />
