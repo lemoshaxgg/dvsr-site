@@ -1,4 +1,4 @@
-﻿export const categories = [
+export const categories = [
   { id: 'all',       label: 'Все категории' },
   { id: 'fence3d',   label: '3D заборы и ворота',        img: '/catalog/fence3d.jpg' },
   { id: 'mesh',      label: 'Сетки',                     img: '/catalog/mesh.jpg' },
@@ -6,7 +6,7 @@
   { id: 'septic',    label: 'Септики и очистные',        img: '/catalog/septic.jpg' },
   { id: 'kesson',    label: 'Кессоны',                   img: '/catalog/products/64.jpg' },
   { id: 'cellar',    label: 'Погреба',                   img: '/catalog/products/75.jpg' },
-  { id: 'tanks',     label: 'Ёмкости пластиковые',       img: '/catalog/products/193.jpg' },
+  { id: 'tanks',     label: 'Ёмкости и еврокубы',        img: '/catalog/categories/eurocubes.jpg' },
   { id: 'fglass',    label: 'Стеклопластик (ЛОС)',        img: '/catalog/products/91.jpg' },
   { id: 'proflist',  label: 'Профлист и алюминий',       img: '/catalog/proflist.jpg' },
   { id: 'rail',      label: 'Нерж. ограждения',          img: '/catalog/products/109.jpg' },
@@ -115,6 +115,7 @@ export const subcategories = {
     { id: 'rect',     label: 'Прямоугольные' },
     { id: 'horiz',    label: 'Горизонтальные' },
     { id: 'slim',     label: 'Узкие SLIM' },
+    { id: 'eurocube', label: 'Еврокубы и баки' },
   ],
   proflist: [
     { id: 'sheet',    label: 'Профнастил' },
@@ -463,18 +464,17 @@ export const items = [
 
 // Сигнал (signaldv.ru)
 categories.push(
-  {id:"sigbiz",   label:"Оборудование для бизнеса",        icon:"🏢"},
-  {id:"sigcctv",  label:"Видеонаблюдение и СКУД",           icon:"📹"},
-  {id:"siglandsc",label:"Благоустройство территории",        icon:"🌳"},
-  {id:"sigroad",  label:"Дорожное движение и разметка",      icon:"🚧"},
-  {id:"sigfire",  label:"Противопожарное оборудование",      icon:"🧯"},
-  {id:"sigppe",   label:"Средства защиты (СИЗ)",             icon:"🦺"},
-  {id:"sigtanks", label:"Ёмкости и еврокубы",               icon:"🛢️"},
-  {id:"sighome",  label:"Товары для дома и сада",            icon:"🏡"},
-  {id:"sigsite",  label:"Оборудование для стройплощадок",    icon:"🏗️"},
-  {id:"sigtech",  label:"Технические материалы",             icon:"🔧"},
-  {id:"sigmarine",label:"Морское оборудование",              icon:"⚓"},
-  {id:"sigfood",  label:"Пищевое производство",              icon:"🍽️"},
+  {id:"sigbiz",   label:"Оборудование для бизнеса",        icon:"🏢", img:"/catalog/categories/business.jpg"},
+  {id:"sigcctv",  label:"Видеонаблюдение и СКУД",           icon:"📹", img:"/catalog/categories/cctv.jpg"},
+  {id:"siglandsc",label:"Благоустройство территории",        icon:"🌳", img:"/catalog/categories/landscaping.jpg"},
+  {id:"sigroad",  label:"Дорожное движение и разметка",      icon:"🚧", img:"/catalog/categories/road.jpg"},
+  {id:"sigfire",  label:"Противопожарное оборудование",      icon:"🧯", img:"/catalog/categories/fire.jpg"},
+  {id:"sigppe",   label:"Средства защиты (СИЗ)",             icon:"🦺", img:"/catalog/categories/ppe.jpg"},
+  {id:"sighome",  label:"Товары для дома и сада",            icon:"🏡", img:"/catalog/categories/home.jpg"},
+  {id:"sigsite",  label:"Оборудование для стройплощадок",    icon:"🏗️", img:"/catalog/categories/site.jpg"},
+  {id:"sigtech",  label:"Технические материалы",             icon:"🔧", img:"/catalog/categories/tech.jpg"},
+  {id:"sigmarine",label:"Морское оборудование",              icon:"⚓", img:"/catalog/categories/marine.jpg"},
+  {id:"sigfood",  label:"Пищевое производство",              icon:"🍽️", img:"/catalog/categories/food.jpg"},
 )
 
 // Восток Кабель (vostokkabel-vl.ru)
