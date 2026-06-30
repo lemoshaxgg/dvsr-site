@@ -318,9 +318,17 @@ const categoryMap = Object.fromEntries(categories.map(c => [c.id, c.label]))
 const { data: item } = await useAsyncData(`product-${itemId}`, async () => {
   const staticItem = staticItems.find(i => i.id === itemId)
   if (staticItem) return staticItem
+  // Партнёрские товары — в отдельных JSON. Диапазоны ID не пересекаются:
+  // кабель 1000–3112, pd 8001–8088, sig 10000–12212, vk 20000–22056
+  let url = null
+  if (itemId >= 1000  && itemId <= 3112)  url = '/data/catalog-items.json'
+  else if (itemId >= 8001  && itemId <= 8088)  url = '/data/catalog-pd.json'
+  else if (itemId >= 10000 && itemId <= 12212) url = '/data/catalog-sig.json'
+  else if (itemId >= 20000 && itemId <= 22056) url = '/data/catalog-vk.json'
+  if (!url) return null
   try {
-    const all = await $fetch('/data/catalog-items.json')
-    return all.find(i => i.id === itemId) ?? null
+    const all = await $fetch(url)
+    return (Array.isArray(all) ? all.find(i => i.id === itemId) : null) ?? null
   } catch { return null }
 })
 
@@ -389,6 +397,10 @@ const photoIdx = ref(0)
 const failedPhotos = reactive(new Set())
 const galleryPhotos = computed(() => {
   if (!item.value) return []
+  // vk_ товары: скачанные фото содержат логотип поставщика — не показываем
+  if (typeof item.value.category === 'string' && item.value.category.startsWith('vk_')) {
+    return (item.value.photos || []).filter(p => p && /^https?:/.test(p) && !failedPhotos.has(p))
+  }
   if (item.value.photos && item.value.photos.length > 1) {
     return item.value.photos.filter(p => p && !failedPhotos.has(p))
   }
