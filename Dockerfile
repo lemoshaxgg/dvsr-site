@@ -1,4 +1,4 @@
-# ── Сборка Nuxt 3 (node-server preset) ──
+# ── Сборка Nuxt 3 (node-server preset) — rebuild 2026-06-30 ──
 FROM node:22-alpine AS build
 WORKDIR /app
 
