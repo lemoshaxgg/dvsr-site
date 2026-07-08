@@ -89,8 +89,7 @@ const loading = ref(true)
 const leads = ref([])
 const activeFilter = ref('all')
 
-const roleCookie = useCookie('admin_role')
-const isAdmin = computed(() => roleCookie.value === 'admin')
+const isAdmin = ref(false)
 
 const filters = [
   { key: 'all',     label: 'Все' },
@@ -153,7 +152,13 @@ function fmtDate(d) {
     + ' ' + dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
 
-onMounted(loadLeads)
+onMounted(async () => {
+  try {
+    const me = await $fetch('/api/admin/me')
+    isAdmin.value = me.role === 'admin'
+  } catch {}
+  await loadLeads()
+})
 </script>
 
 <style scoped>
