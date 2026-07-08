@@ -2806,5 +2806,30 @@ async function submitOrder() {
   .catalog__sort-pills { display: none; }
   .catalog__list--grid { grid-template-columns: repeat(2, 1fr); }
   .catalog__list--compact { grid-template-columns: repeat(3, 1fr) !important; gap: 0.4rem !important; }
+
+  /* Карточки-плитки: цена и кнопка не влезают в одну строку — раскладываем в 2 ряда */
+  .catalog-item--grid .catalog-item__footer,
+  .catalog-item--compact .catalog-item__footer {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .catalog-item--grid .catalog-item__price-block,
+  .catalog-item--compact .catalog-item__price-block {
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+  .catalog-item--grid .catalog-item__price,
+  .catalog-item--compact .catalog-item__price {
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .catalog-item--grid .catalog-item__btn,
+  .catalog-item--compact .catalog-item__btn {
+    flex: 1 1 auto;
+    width: auto;
+    text-align: center;
+  }
 }
 </style>
