@@ -11,3 +11,6 @@ dist/
 .env*
 
 public/catalog/products/_backup/
+
+# Сгенерированные прайс-листы
+*.xlsx
