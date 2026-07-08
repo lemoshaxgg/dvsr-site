@@ -111,12 +111,14 @@ const pwValue = ref('')
 async function load() {
   loading.value = true
   try {
-    const [list, me] = await Promise.all([
-      $fetch('/api/admin/users'),
-      $fetch('/api/admin/me'),
-    ])
-    users.value = list
+    const me = await $fetch('/api/admin/me')
+    // Страница доступна только владельцу — менеджера уводим на заявки
+    if (me.role !== 'admin') {
+      await navigateTo('/admin/crm')
+      return
+    }
     meId.value = me.id
+    users.value = await $fetch('/api/admin/users')
   } catch {}
   loading.value = false
 }

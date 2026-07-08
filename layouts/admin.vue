@@ -13,7 +13,7 @@
         <NuxtLink to="/admin/catalog" class="adm__link" active-class="adm__link--active">
           <span class="adm__link-icon">📦</span> Каталог
         </NuxtLink>
-        <NuxtLink to="/admin/users" class="adm__link" active-class="adm__link--active">
+        <NuxtLink v-if="isAdmin" to="/admin/users" class="adm__link" active-class="adm__link--active">
           <span class="adm__link-icon">👥</span> Сотрудники
         </NuxtLink>
       </nav>
