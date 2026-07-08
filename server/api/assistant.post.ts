@@ -61,23 +61,26 @@ export default defineEventHandler(async (event) => {
     messages: [{ role: 'system', text: SYSTEM_BASE + context }, ...msgs],
   }
 
+  const debug = !!getQuery(event).debug
   try {
     const res = await fetch(ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Api-Key ${apiKey}` },
       body: JSON.stringify(payload),
     })
+    const raw = await res.text()
     if (!res.ok) {
-      const t = await res.text()
-      console.error('yandexgpt error:', res.status, t.slice(0, 400))
+      console.error('yandexgpt error:', res.status, raw.slice(0, 400))
+      if (debug) return { error: true, status: res.status, body: raw.slice(0, 600) }
       throw createError({ statusCode: 500, message: 'Ошибка ассистента' })
     }
-    const data: any = await res.json()
+    const data: any = JSON.parse(raw)
     const reply = data?.result?.alternatives?.[0]?.message?.text?.trim()
     return { reply: reply || 'Извините, не удалось сформировать ответ. Позвоните +7 914 329-29-29.' }
   } catch (e: any) {
     if (e?.statusCode) throw e
     console.error('assistant error:', e?.message || e)
+    if (debug) return { error: true, exception: String(e?.message || e) }
     throw createError({ statusCode: 500, message: 'Ошибка ассистента' })
   }
 })
