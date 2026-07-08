@@ -27,6 +27,21 @@ function sellPrice(it) {
   return null
 }
 
+// Требования Фарпоста: у каждого товара — уникальный артикул, состояние, статус наличия.
+const CONDITION = 'Новый'        // все товары новые
+const AVAILABILITY = 'под заказ' // поменяйте на 'в наличии', если товар есть на складе
+
+const seenArt = new Set()
+function article(it) {
+  // Родной артикул (Восток Кабель) если есть, иначе ДСР-{id}; гарантируем уникальность
+  let a = (it.art && String(it.art).trim()) || `ДСР-${it.id}`
+  if (seenArt.has(a)) a = `${a}-${it.id}`
+  seenArt.add(a)
+  return a
+}
+
+const photoUrl = it => (/^https?:/i.test(it.photo || '') ? it.photo : '')
+
 const all = [...items, ...vkItems, ...sigItems, ...pdItems]
 
 // Фарпост принимает прайс только с конкретными товарами и реальными ценами.
@@ -36,18 +51,20 @@ const priced = all.filter(it => it.fixedPrice || it.basePrice)
 const skipped = all.length - priced.length
 
 const rows = priced.map(it => ({
-  'Наименование': clean(it.title),
-  'Артикул': it.art || '',
-  'Категория': clean(catMap[it.category] || it.category),
-  'Цена, ₽': sellPrice(it),
+  'Артикул': article(it),
+  'Наименование товара': clean(it.title),
+  'Состояние': CONDITION,
+  'Цена, руб.': sellPrice(it),
+  'Наличие': AVAILABILITY,
   'Ед. изм.': it.unit || 'шт',
+  'Категория': clean(catMap[it.category] || it.category),
+  'Фотография': photoUrl(it),
   'Описание': clean(it.description),
 }))
 
-const ws = XLSX.utils.json_to_sheet(rows, {
-  header: ['Наименование', 'Артикул', 'Категория', 'Цена, ₽', 'Ед. изм.', 'Описание'],
-})
-ws['!cols'] = [{ wch: 55 }, { wch: 12 }, { wch: 26 }, { wch: 12 }, { wch: 9 }, { wch: 70 }]
+const HEADER = ['Артикул', 'Наименование товара', 'Состояние', 'Цена, руб.', 'Наличие', 'Ед. изм.', 'Категория', 'Фотография', 'Описание']
+const ws = XLSX.utils.json_to_sheet(rows, { header: HEADER })
+ws['!cols'] = [{ wch: 16 }, { wch: 55 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 9 }, { wch: 26 }, { wch: 40 }, { wch: 70 }]
 const wb = XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(wb, ws, 'Прайс ДСР')
 
