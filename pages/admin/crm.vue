@@ -37,6 +37,7 @@
             <th>Товар / Комментарий</th>
             <th>Статус</th>
             <th>Заметка</th>
+            <th v-if="isAdmin"></th>
           </tr>
         </thead>
         <tbody>
@@ -71,6 +72,9 @@
                 @keydown.enter="$event.target.blur()"
               />
             </td>
+            <td v-if="isAdmin" class="crm__del-cell">
+              <button class="crm__del" title="Удалить заявку" @click="deleteLead(lead)">✕</button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -84,6 +88,9 @@ definePageMeta({ layout: 'admin' })
 const loading = ref(true)
 const leads = ref([])
 const activeFilter = ref('all')
+
+const roleCookie = useCookie('admin_role')
+const isAdmin = computed(() => roleCookie.value === 'admin')
 
 const filters = [
   { key: 'all',     label: 'Все' },
@@ -127,6 +134,16 @@ async function updateNotes(lead, notes) {
   try {
     await $fetch(`/api/admin/leads/${lead.id}`, { method: 'PATCH', body: { notes } })
   } catch {}
+}
+
+async function deleteLead(lead) {
+  if (!confirm(`Удалить заявку от ${lead.name || 'без имени'}? Отменить нельзя.`)) return
+  try {
+    await $fetch(`/api/admin/leads/${lead.id}`, { method: 'DELETE' })
+    leads.value = leads.value.filter(l => l.id !== lead.id)
+  } catch (e) {
+    alert(e?.data?.message || 'Ошибка удаления')
+  }
 }
 
 function fmtDate(d) {
@@ -252,6 +269,21 @@ onMounted(loadLeads)
 }
 .crm__notes:hover { border-color: #333; }
 .crm__notes:focus { border-color: #555; color: #ddd; background: #1a1a1a; }
+
+.crm__del-cell { text-align: center; }
+.crm__del {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  line-height: 1;
+  transition: all 0.15s;
+}
+.crm__del:hover { color: #ff6b6b; border-color: #5a2f2f; background: #1a1212; }
 
 @media (max-width: 768px) {
   .crm__stats { grid-template-columns: repeat(2, 1fr); }
