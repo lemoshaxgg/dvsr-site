@@ -1,10 +1,12 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { searchCatalog, categoryLabels } from '~/server/utils/assistantCatalog'
 
-const MODEL = 'claude-haiku-4-5'
-const MAX_TURNS = 4 // защита от бесконечного цикла tool-use
+// YandexGPT (Yandex Cloud Foundation Models). Ключи в env Timeweb:
+//   YANDEX_API_KEY   — API-ключ сервисного аккаунта
+//   YANDEX_FOLDER_ID — идентификатор каталога Yandex Cloud
+const GPT_MODEL = process.env.YANDEX_GPT_MODEL || 'yandexgpt-lite' // или 'yandexgpt' (умнее, дороже)
+const ENDPOINT = 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion'
 
-const SYSTEM = `Ты — вежливый ИИ-консультант компании ДСР (Дальневосточные Системы Развития), Владивосток. Отвечаешь посетителям сайта dsr-dv.ru.
+const SYSTEM_BASE = `Ты — вежливый ИИ-консультант компании ДСР (Дальневосточные Системы Развития), Владивосток, сайт dsr-dv.ru.
 
 О компании:
 - Поставка и монтаж: заборы 3D, сваи, септики, кабель, металлопрокат, котлы, стройматериалы и оборудование (каталог ~4500 позиций).
@@ -17,31 +19,15 @@ const SYSTEM = `Ты — вежливый ИИ-консультант компа
 
 Правила:
 - Отвечай кратко, по-деловому, только про ДСР (товары, услуги, доставка, контакты). На посторонние темы вежливо возвращай к тематике компании.
-- Когда спрашивают про конкретный товар, цену или наличие — ОБЯЗАТЕЛЬНО вызывай инструмент search_catalog и отвечай по его результатам. Не выдумывай товары и цены.
-- Цены ориентировочные. Если у позиции «уточнить у менеджера» или клиент хочет заказать — предложи оставить заявку или позвонить +7 914 329-29-29.
-- Если ничего не нашлось — честно скажи и предложи связаться с менеджером.
-- Пиши на русском, без Markdown-разметки (обычный текст).`
-
-const tools: Anthropic.Tool[] = [
-  {
-    name: 'search_catalog',
-    description:
-      'Поиск товаров в каталоге ДСР по ключевым словам. Возвращает до 8 совпадений с ценами. Вызывай при любом вопросе про конкретный товар, цену или наличие.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        query: {
-          type: 'string',
-          description: 'Ключевые слова, например "кабель ВВГ 3х2.5", "септик 2000", "профлист"',
-        },
-      },
-      required: ['query'],
-    },
-  },
-]
+- Про товары, цены и наличие отвечай ТОЛЬКО по блоку «Товары из каталога» ниже, если он есть. Не выдумывай товары и цены.
+- Цены ориентировочные. Если цену нужно уточнить или клиент хочет заказать — предложи оставить заявку или позвонить +7 914 329-29-29.
+- Если подходящих товаров нет — честно скажи и предложи связаться с менеджером.
+- Пиши на русском обычным текстом, без Markdown.`
 
 export default defineEventHandler(async (event) => {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  const folder = process.env.YANDEX_FOLDER_ID
+  const apiKey = process.env.YANDEX_API_KEY
+  if (!folder || !apiKey) {
     throw createError({ statusCode: 503, message: 'Ассистент не настроен' })
   }
 
@@ -49,55 +35,48 @@ export default defineEventHandler(async (event) => {
   const history = Array.isArray(body.messages) ? body.messages : []
 
   // Санитизация истории: только user/assistant + текст, лимиты
-  const messages: Anthropic.MessageParam[] = history
+  let msgs = history
     .slice(-12)
     .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-    .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 2000) }))
+    .map((m: any) => ({ role: m.role as 'user' | 'assistant', text: String(m.content).slice(0, 2000) }))
 
-  if (!messages.length || messages[messages.length - 1].role !== 'user') {
+  // YandexGPT ожидает начало диалога с пользователя — срезаем приветствие ассистента
+  while (msgs.length && msgs[0].role === 'assistant') msgs = msgs.slice(1)
+
+  if (!msgs.length || msgs[msgs.length - 1].role !== 'user') {
     throw createError({ statusCode: 400, message: 'Нужно сообщение пользователя' })
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  // Поиск товаров по последнему сообщению и подкладывание результатов модели
+  const lastUser = msgs[msgs.length - 1].text
+  const hits = searchCatalog(lastUser, 8)
+  const context = hits.length
+    ? '\n\nТовары из каталога по запросу пользователя (используй эти данные для ответа о наличии и ценах):\n' +
+      hits.map((h) => `— ${h.title} — ${h.price}${h.unit ? ' / ' + h.unit : ''} (${h.category})`).join('\n')
+    : ''
+
+  const payload = {
+    modelUri: `gpt://${folder}/${GPT_MODEL}/latest`,
+    completionOptions: { stream: false, temperature: 0.3, maxTokens: '1000' },
+    messages: [{ role: 'system', text: SYSTEM_BASE + context }, ...msgs],
+  }
 
   try {
-    for (let turn = 0; turn < MAX_TURNS; turn++) {
-      const res = await client.messages.create({
-        model: MODEL,
-        max_tokens: 1024,
-        system: SYSTEM,
-        tools,
-        messages,
-      })
-
-      if (res.stop_reason === 'tool_use') {
-        messages.push({ role: 'assistant', content: res.content })
-        const results: Anthropic.ToolResultBlockParam[] = []
-        for (const block of res.content) {
-          if (block.type === 'tool_use' && block.name === 'search_catalog') {
-            const query = String((block.input as any)?.query || '')
-            const hits = searchCatalog(query)
-            results.push({
-              type: 'tool_result',
-              tool_use_id: block.id,
-              content: JSON.stringify(hits.length ? hits : { note: 'ничего не найдено' }),
-            })
-          }
-        }
-        messages.push({ role: 'user', content: results })
-        continue
-      }
-
-      // Обычный ответ
-      const text = res.content
-        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-        .map((b) => b.text)
-        .join('\n')
-        .trim()
-      return { reply: text || 'Извините, не удалось сформировать ответ. Позвоните +7 914 329-29-29.' }
+    const res = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Api-Key ${apiKey}` },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) {
+      const t = await res.text()
+      console.error('yandexgpt error:', res.status, t.slice(0, 400))
+      throw createError({ statusCode: 500, message: 'Ошибка ассистента' })
     }
-    return { reply: 'Уточните запрос, пожалуйста, или свяжитесь с менеджером: +7 914 329-29-29.' }
+    const data: any = await res.json()
+    const reply = data?.result?.alternatives?.[0]?.message?.text?.trim()
+    return { reply: reply || 'Извините, не удалось сформировать ответ. Позвоните +7 914 329-29-29.' }
   } catch (e: any) {
+    if (e?.statusCode) throw e
     console.error('assistant error:', e?.message || e)
     throw createError({ statusCode: 500, message: 'Ошибка ассистента' })
   }
