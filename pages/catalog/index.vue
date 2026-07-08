@@ -735,6 +735,8 @@ const failedPrimaryPhotos = reactive(new Set())
 const failedFallbackPhotos = reactive(new Set())
 
 function productPhoto(item) {
+  // Явно помеченные как «без фото» — не показываем и не запрашиваем
+  if (item.noPhoto) return null
   // Для vk_ товаров — скачанные фото содержат логотип поставщика, не показываем
   if (typeof item.category === 'string' && item.category.startsWith('vk_')) return null
   // Внешнее фото (CDN Сигнала, Интеркабель и др.)
