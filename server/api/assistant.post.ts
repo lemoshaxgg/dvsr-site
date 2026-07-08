@@ -61,7 +61,6 @@ export default defineEventHandler(async (event) => {
     messages: [{ role: 'system', text: SYSTEM_BASE + context }, ...msgs],
   }
 
-  const debug = !!getQuery(event).debug
   try {
     const res = await fetch(ENDPOINT, {
       method: 'POST',
@@ -71,7 +70,6 @@ export default defineEventHandler(async (event) => {
     const raw = await res.text()
     if (!res.ok) {
       console.error('yandexgpt error:', res.status, raw.slice(0, 400))
-      if (debug) return { error: true, status: res.status, body: raw.slice(0, 600) }
       throw createError({ statusCode: 500, message: 'Ошибка ассистента' })
     }
     const data: any = JSON.parse(raw)
@@ -80,7 +78,6 @@ export default defineEventHandler(async (event) => {
   } catch (e: any) {
     if (e?.statusCode) throw e
     console.error('assistant error:', e?.message || e)
-    if (debug) return { error: true, exception: String(e?.message || e) }
     throw createError({ statusCode: 500, message: 'Ошибка ассистента' })
   }
 })
