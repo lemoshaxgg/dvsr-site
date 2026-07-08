@@ -43,6 +43,7 @@
     <CookieBanner v-if="!isAdmin" />
     <TelegramBtn v-if="!isAdmin" />
     <WhatsAppBtn v-if="!isAdmin" />
+    <AiAssistant v-if="!isAdmin" />
 
     <!-- Кнопка «Наверх» -->
     <transition name="back-top">
