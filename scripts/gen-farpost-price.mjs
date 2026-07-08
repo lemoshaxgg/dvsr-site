@@ -29,7 +29,7 @@ function sellPrice(it) {
 
 // Требования Фарпоста: у каждого товара — уникальный артикул, состояние, статус наличия.
 const CONDITION = 'Новый'        // все товары новые
-const AVAILABILITY = 'под заказ' // поменяйте на 'в наличии', если товар есть на складе
+const AVAILABILITY = 'в наличии' // поменяйте на 'под заказ', если товар под заказ
 
 const seenArt = new Set()
 function article(it) {
