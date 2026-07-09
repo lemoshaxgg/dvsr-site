@@ -275,16 +275,18 @@
             <h2 class="catalog__cats-title">Каталог категорий</h2>
             <div class="catalog__cats">
               <div
-                v-for="cat in categoriesForGrid"
+                v-for="(cat, idx) in categoriesForGrid"
                 :key="cat.id"
                 class="catalog__cat-card"
                 :class="{ 'catalog__cat-card--photo': cat.img }"
+                :style="{ '--i': idx }"
                 role="button"
                 tabindex="0"
                 @click="selectCategory(cat.id)"
                 @keydown.enter.space.prevent="selectCategory(cat.id)"
               >
                 <div class="catalog__cat-card-visual">
+                  <span v-if="cat.img" class="catalog__cat-card-shine" aria-hidden="true"></span>
                   <img v-if="cat.img" :src="cat.img" :alt="cat.label" class="catalog__cat-card-photo" loading="lazy" />
                   <div v-else class="catalog__cat-card-icon">
                     <svg v-if="catIconPaths[cat.id]" xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24">
@@ -298,6 +300,9 @@
                 <div class="catalog__cat-card-footer">
                   <span class="catalog__cat-card-label">{{ cat.label }}</span>
                   <span class="catalog__cat-card-count">{{ countByCategory(cat.id) }}</span>
+                  <svg class="catalog__cat-card-arrow" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-6-6 6 6-6 6"/>
+                  </svg>
                 </div>
               </div>
             </div>
@@ -1672,13 +1677,25 @@ async function submitOrder() {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+  transition: border-color 0.25s, box-shadow 0.35s cubic-bezier(0.16,1,0.3,1), transform 0.35s cubic-bezier(0.16,1,0.3,1);
   user-select: none;
+  /* Каскадное появление */
+  animation: cat-card-in 0.55s cubic-bezier(0.16,1,0.3,1) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+@keyframes cat-card-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .catalog__cat-card:hover {
-  border-color: rgba(230,184,0,0.45);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(230,184,0,0.06);
-  transform: translateY(-3px);
+  border-color: rgba(230,184,0,0.55);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(230,184,0,0.1), 0 0 24px rgba(230,184,0,0.12);
+  transform: translateY(-6px) scale(1.015);
+}
+.catalog__cat-card:active { transform: translateY(-2px) scale(0.99); transition-duration: 0.1s; }
+@media (prefers-reduced-motion: reduce) {
+  .catalog__cat-card { animation: none; }
+  .catalog__cat-card:hover { transform: none; }
 }
 
 /* Вращающаяся каёмка */
@@ -1750,8 +1767,33 @@ async function submitOrder() {
   filter: brightness(0.82) saturate(0.9);
 }
 .catalog__cat-card--photo:hover .catalog__cat-card-photo {
-  transform: scale(1.06);
-  filter: brightness(0.95) saturate(1.1);
+  transform: scale(1.09);
+  filter: brightness(1) saturate(1.15);
+}
+
+/* Блик-проблеск по фото при наведении */
+.catalog__cat-card-shine {
+  position: absolute; z-index: 2;
+  top: 0; left: -75%;
+  width: 50%; height: 100%;
+  background: linear-gradient(100deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.28) 50%,
+    rgba(255,255,255,0) 100%);
+  transform: skewX(-18deg);
+  pointer-events: none;
+  opacity: 0;
+}
+.catalog__cat-card--photo:hover .catalog__cat-card-shine {
+  animation: cat-card-shine 0.85s cubic-bezier(0.3,0,0.2,1);
+}
+@keyframes cat-card-shine {
+  0%   { left: -75%; opacity: 0; }
+  15%  { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalog__cat-card-shine { display: none; }
 }
 
 /* Нижняя часть карточки */
@@ -1799,6 +1841,22 @@ async function submitOrder() {
   flex-shrink: 0;
 }
 .catalog__cat-card:hover .catalog__cat-card-count { color: #e6b800; background: rgba(230,184,0,0.12); }
+
+/* Стрелка-подсказка */
+.catalog__cat-card-arrow {
+  color: #e6b800;
+  flex-shrink: 0;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.3s, transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.catalog__cat-card:not(.catalog__cat-card--photo) .catalog__cat-card-arrow { display: none; }
+.catalog__cat-card--photo:hover .catalog__cat-card-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+/* Лёгкий сдвиг названия, чтобы освободить место стрелке */
+.catalog__cat-card--photo:hover .catalog__cat-card-label { transform: translateX(2px); transition: transform 0.35s cubic-bezier(0.16,1,0.3,1); }
 
 /* Заголовок раздела */
 .catalog__section-header {
