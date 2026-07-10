@@ -144,15 +144,20 @@
               v-model="searchQuery"
               type="text"
               class="catalog__search-input"
-              placeholder="Найти услугу или товар..."
+              placeholder=""
               autocomplete="off"
               aria-label="Поиск по каталогу"
               role="combobox"
               aria-autocomplete="list"
               :aria-expanded="dropVisible && suggestions.length > 0"
-              @focus="dropVisible = true"
+              @focus="searchFocused = true; dropVisible = true"
+              @blur="searchFocused = false"
               @keydown="onSearchKeydown"
             />
+            <!-- Typewriter placeholder (как на ПК) -->
+            <span v-if="!searchQuery && !searchFocused" class="catalog__tw" aria-hidden="true">
+              {{ twText }}<span class="catalog__tw-cursor">|</span>
+            </span>
             <button v-if="searchQuery" class="catalog__search-clear" aria-label="Очистить поиск" @click="searchQuery = ''; dropVisible = false">✕</button>
           </div>
           <transition name="suggestions">
