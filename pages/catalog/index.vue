@@ -278,7 +278,7 @@
                 v-for="(cat, idx) in categoriesForGrid"
                 :key="cat.id"
                 class="catalog__cat-card"
-                :class="{ 'catalog__cat-card--photo': cat.img }"
+                :class="{ 'catalog__cat-card--photo': catImage(cat) }"
                 :style="{ '--i': idx }"
                 role="button"
                 tabindex="0"
@@ -286,8 +286,8 @@
                 @keydown.enter.space.prevent="selectCategory(cat.id)"
               >
                 <div class="catalog__cat-card-visual">
-                  <span v-if="cat.img" class="catalog__cat-card-shine" aria-hidden="true"></span>
-                  <img v-if="cat.img" :src="cat.img" :alt="cat.label" class="catalog__cat-card-photo" loading="lazy" />
+                  <span v-if="catImage(cat)" class="catalog__cat-card-shine" aria-hidden="true"></span>
+                  <img v-if="catImage(cat)" :src="catImage(cat)" :alt="cat.label" class="catalog__cat-card-photo" loading="lazy" />
                   <div v-else class="catalog__cat-card-icon">
                     <svg v-if="catIconPaths[cat.id]" xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24">
                       <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="catIconPaths[cat.id]"/>
@@ -987,6 +987,20 @@ const categoryMap = Object.fromEntries(categories.map(c => [c.id, c.label]))
 const categoriesForGrid = computed(() =>
   categories.filter(c => c.id !== 'all' && countByCategory(c.id) > 0)
 )
+
+// Картинка категории: своя (cat.img) или фото первого товара с фото из этой категории
+const _autoCatImg = computed(() => {
+  const map = {}
+  for (const it of items) {
+    if (map[it.category]) continue
+    const p = it.photo || (it.photos && it.photos[0])
+    if (p) map[it.category] = p
+  }
+  return map
+})
+function catImage(cat) {
+  return cat.img || _autoCatImg.value[cat.id] || ''
+}
 
 const POPULAR_IDS = [1, 5, 34, 58, 15]
 const popularItems = computed(() => {
