@@ -26,6 +26,9 @@ const securityHeaders = {
 export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
   nitro: {
+    // Пред-сжатие public-ассетов (в т.ч. /data/*.json ~4.5 МБ) в gzip+brotli.
+    // Сервер отдаёт сжатыми при Accept-Encoding → каталог грузится в разы быстрее.
+    compressPublicAssets: { gzip: true, brotli: true },
     experimental: {
       openAPI: true,
     },
