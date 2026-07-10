@@ -612,7 +612,21 @@
 <script setup>
 import { ref, computed, reactive, watch, nextTick, onMounted } from 'vue'
 import { phoneMask } from '~/composables/usePhoneMask.js'
-import { categories, items as staticItems, subcategories } from '~/data/catalog.js'
+import { categories as coreCategories, items as staticItems, subcategories as coreSubcategories } from '~/data/catalog.js'
+import { vkCategories, vkSubcategories } from '~/data/catalog-vostokkabel.js'
+import { sigCategories } from '~/data/catalog-sig.js'
+import { pdCategories } from '~/data/catalog-plastdv.js'
+
+// Сайдбар показывает категории ВСЕХ источников (ядро + партнёры). Иначе ~4000
+// товаров электрики/Сигнала видны только в «Все»/поиске, но не пролистать по разделам.
+const categories = (() => {
+  const seen = new Set(), out = []
+  for (const c of [...coreCategories, ...vkCategories, ...sigCategories, ...pdCategories]) {
+    if (c && !seen.has(c.id)) { seen.add(c.id); out.push(c) }
+  }
+  return out
+})()
+const subcategories = { ...coreSubcategories, ...vkSubcategories }
 import { priceFrom, PRICE_DISCLAIMER } from '~/composables/usePrice.js'
 import { parseQuery, scoreItem, searchItems } from '~/composables/useCatalogSearch.js'
 
