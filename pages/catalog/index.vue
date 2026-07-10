@@ -659,20 +659,29 @@ onMounted(async () => {
   const loadJson = async (url) => {
     try {
       const r = await fetch(url)
-      return r.ok ? r.json() : []
+      return r.ok ? await r.json() : []
     } catch { return [] }
   }
-  const [cable, sig, vk, pd, cs, psh] = await Promise.all([
-    loadJson('/data/catalog-items.json'),
-    loadJson('/data/catalog-sig.json'),
-    loadJson('/data/catalog-vk.json'),
-    loadJson('/data/catalog-pd.json'),
-    loadJson('/data/catalog-cs.json'),
-    loadJson('/data/catalog-psh.json'),
-  ])
-  const all = [...cable, ...sig, ...vk, ...pd, ...cs, ...psh]
-  // один splice вместо тысяч push — реактивность срабатывает 1 раз
-  items.splice(items.length, 0, ...all)
+  const yield_ = () => new Promise(r => setTimeout(r, 0))
+  // Порядок = приоритет появления: ходовые категории (ядро, ПримСтройХаб, сантехника) раньше
+  const sources = [
+    '/data/catalog-items.json',
+    '/data/catalog-psh.json',
+    '/data/catalog-cs.json',
+    '/data/catalog-vk.json',
+    '/data/catalog-sig.json',
+    '/data/catalog-pd.json',
+  ]
+  // Прогрессивная подгрузка: каждый источник грузится и добавляется ПОРЦИЯМИ
+  // независимо от других → категории наполняются на глазах, страница не морозится,
+  // листать можно сразу. markRaw снимает глубокую реактивность (кратно быстрее).
+  await Promise.all(sources.map(async (url) => {
+    const arr = await loadJson(url)
+    for (let i = 0; i < arr.length; i += 300) {
+      items.splice(items.length, 0, ...arr.slice(i, i + 300).map(markRaw))
+      await yield_() // отдаём кадр браузеру — товары появляются постепенно
+    }
+  }))
   catalogPending.value = false
 })
 
