@@ -7,20 +7,17 @@ export const vkCategories = [
   {
     "id": "vk_auto",
     "label": "Автоматика",
-    "icon": "⚡",
-    "img": "/catalog/products/20000.jpg"
+    "icon": "⚡"
   },
   {
     "id": "vk_cable_access",
     "label": "Изделия для прокладки кабеля",
-    "icon": "📦",
-    "img": "/catalog/products/20164.jpg"
+    "icon": "📦"
   },
   {
     "id": "vk_tools",
     "label": "Инструмент электромонтажный",
-    "icon": "🔧",
-    "img": "/catalog/products/20180.jpg"
+    "icon": "🔧"
   },
   {
     "id": "vk_climate",
@@ -35,20 +32,17 @@ export const vkCategories = [
   {
     "id": "vk_security",
     "label": "Системы безопасности",
-    "icon": "🔒",
-    "img": "/catalog/products/20372.jpg"
+    "icon": "🔒"
   },
   {
     "id": "vk_shields",
     "label": "Щиты и боксы",
-    "icon": "🗄️",
-    "img": "/catalog/products/20230.jpg"
+    "icon": "🗄️"
   },
   {
     "id": "vk_electro",
     "label": "Электроустановочные изделия",
-    "icon": "🔌",
-    "img": "/catalog/products/20137.jpg"
+    "icon": "🔌"
   },
   {
     "id": "vk_soldering",
