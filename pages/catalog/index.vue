@@ -662,13 +662,15 @@ onMounted(async () => {
       return r.ok ? r.json() : []
     } catch { return [] }
   }
-  const [cable, sig, vk, pd] = await Promise.all([
+  const [cable, sig, vk, pd, cs, psh] = await Promise.all([
     loadJson('/data/catalog-items.json'),
     loadJson('/data/catalog-sig.json'),
     loadJson('/data/catalog-vk.json'),
     loadJson('/data/catalog-pd.json'),
+    loadJson('/data/catalog-cs.json'),
+    loadJson('/data/catalog-psh.json'),
   ])
-  const all = [...cable, ...sig, ...vk, ...pd]
+  const all = [...cable, ...sig, ...vk, ...pd, ...cs, ...psh]
   // один splice вместо тысяч push — реактивность срабатывает 1 раз
   items.splice(items.length, 0, ...all)
   catalogPending.value = false

@@ -319,12 +319,14 @@ const { data: item } = await useAsyncData(`product-${itemId}`, async () => {
   const staticItem = staticItems.find(i => i.id === itemId)
   if (staticItem) return staticItem
   // Партнёрские товары — в отдельных JSON. Диапазоны ID не пересекаются:
-  // кабель 1000–3112, pd 8001–8088, sig 10000–12212, vk 20000–22056
+  // кабель 1000–3112, pd 8001–8088, sig 10000–12212, vk 20000–22133, сантехника 40000–42829
   let url = null
   if (itemId >= 1000  && itemId <= 3112)  url = '/data/catalog-items.json'
   else if (itemId >= 8001  && itemId <= 8088)  url = '/data/catalog-pd.json'
   else if (itemId >= 10000 && itemId <= 12212) url = '/data/catalog-sig.json'
-  else if (itemId >= 20000 && itemId <= 22056) url = '/data/catalog-vk.json'
+  else if (itemId >= 20000 && itemId <= 22133) url = '/data/catalog-vk.json'
+  else if (itemId >= 40000 && itemId <= 42829) url = '/data/catalog-cs.json'
+  else if (itemId >= 50000 && itemId <= 50637) url = '/data/catalog-psh.json'
   if (!url) return null
   try {
     const all = await $fetch(url)
@@ -346,7 +348,7 @@ const SITE = 'https://dsr-dv.ru'
 useHead(() => {
   const it = item.value
   if (!it) return {}
-  const price = sellPrice(it.basePrice)
+  const price = it.fixedPrice || sellPrice(it.basePrice)
   const product = {
     '@context': 'https://schema.org',
     '@type': 'Product',

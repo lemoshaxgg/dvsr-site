@@ -3,6 +3,8 @@ import { items, categories } from '../data/catalog.js'
 import { vkItems, vkCategories } from '../data/catalog-vostokkabel.js'
 import { sigItems, sigCategories } from '../data/catalog-sig.js'
 import { pdItems, pdCategories } from '../data/catalog-plastdv.js'
+import { csItems } from '../data/catalog-centrsnab.js'
+import { pshItems } from '../data/catalog-psh.js'
 
 // Единый справочник category.id -> label
 const catMap = {}
@@ -42,7 +44,7 @@ function article(it) {
 
 const photoUrl = it => (/^https?:/i.test(it.photo || '') ? it.photo : '')
 
-const all = [...items, ...vkItems, ...sigItems, ...pdItems]
+const all = [...items, ...vkItems, ...sigItems, ...pdItems, ...csItems, ...pshItems]
 
 // Фарпост принимает прайс только с конкретными товарами и реальными ценами.
 // Позиции без цены — это обобщённые «ассортиментные» строки (Смесители, Насосы,

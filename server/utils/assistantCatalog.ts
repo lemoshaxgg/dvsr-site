@@ -3,6 +3,8 @@ import { items, categories } from '../../data/catalog.js'
 import { vkItems, vkCategories } from '../../data/catalog-vostokkabel.js'
 import { sigItems, sigCategories } from '../../data/catalog-sig.js'
 import { pdItems, pdCategories } from '../../data/catalog-plastdv.js'
+import { csItems } from '../../data/catalog-centrsnab.js'
+import { pshItems } from '../../data/catalog-psh.js'
 
 interface RawItem {
   id: number
@@ -36,7 +38,7 @@ interface IndexedItem {
 }
 
 const all: IndexedItem[] = ([] as RawItem[])
-  .concat(items as any, vkItems as any, sigItems as any, pdItems as any)
+  .concat(items as any, vkItems as any, sigItems as any, pdItems as any, csItems as any, pshItems as any)
   .map((it) => ({
     title: (it.title || '').trim(),
     titleLc: (it.title || '').toLowerCase(),
