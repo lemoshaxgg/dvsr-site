@@ -137,7 +137,7 @@ async function checkMail() {
     else if (!r.ok) {
       const raw = String(r.reason || '')
       let hint = raw
-      if (/auth|credential|login|password|invalid|LOGIN|failure/i.test(raw)) hint = 'неверный логин/пароль-приложение или IMAP выключен в ящике'
+      if (/auth|credential|login|password|invalid|LOGIN|failure|command failed|authenticationfailed|\bNO\b|\bBAD\b/i.test(raw)) hint = 'неверный логин/пароль-приложение или IMAP выключен (проверь MAIL_IMAP_USER = полный адрес ящика)'
       else if (/timeout|ETIMEDOUT|ENOTFOUND|ECONNREFUSED|ECONNRESET|network|getaddrinfo/i.test(raw)) hint = 'нет связи с сервером почты (сеть/порт 993)'
       mailMsg.value = 'Не удалось подключиться: ' + hint + (raw && hint !== raw ? ` [${raw.slice(0, 120)}]` : '')
     }

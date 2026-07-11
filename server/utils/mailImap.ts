@@ -155,9 +155,17 @@ export async function syncMailToLeads(): Promise<{ ok: boolean; checked: number;
     await client.logout()
     return { ok: true, checked, imported }
   } catch (e: any) {
-    console.error('mail sync error:', e?.message || e)
+    // Собираем максимально информативную причину (ответ сервера Mail.ru)
+    const detail = [
+      e?.serverResponseCode,
+      e?.responseText,
+      e?.authenticationFailed ? 'AUTHENTICATIONFAILED' : null,
+      e?.code,
+      e?.message,
+    ].filter(Boolean).join(' | ')
+    console.error('mail sync error:', detail)
     try { await client.logout() } catch { /* ignore */ }
-    return { ok: false, checked, imported, reason: e?.message || 'error' }
+    return { ok: false, checked, imported, reason: detail || 'error' }
   } finally {
     running = false
   }
