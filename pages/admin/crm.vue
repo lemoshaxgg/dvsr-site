@@ -134,14 +134,20 @@ async function checkMail() {
   try {
     const r = await $fetch('/api/admin/mail/sync', { method: 'POST' })
     if (r.reason === 'not_configured') mailMsg.value = 'Почта не подключена (нет IMAP-настроек)'
-    else if (!r.ok) mailMsg.value = 'Не удалось подключиться к почте'
+    else if (!r.ok) {
+      const raw = String(r.reason || '')
+      let hint = raw
+      if (/auth|credential|login|password|invalid|LOGIN|failure/i.test(raw)) hint = 'неверный логин/пароль-приложение или IMAP выключен в ящике'
+      else if (/timeout|ETIMEDOUT|ENOTFOUND|ECONNREFUSED|ECONNRESET|network|getaddrinfo/i.test(raw)) hint = 'нет связи с сервером почты (сеть/порт 993)'
+      mailMsg.value = 'Не удалось подключиться: ' + hint + (raw && hint !== raw ? ` [${raw.slice(0, 120)}]` : '')
+    }
     else if (r.imported > 0) { mailMsg.value = `Заведено заявок из писем: ${r.imported}`; await loadLeads() }
     else mailMsg.value = 'Новых писем нет'
   } catch {
     mailMsg.value = 'Ошибка проверки почты'
   }
   checkingMail.value = false
-  setTimeout(() => { mailMsg.value = '' }, 7000)
+  setTimeout(() => { mailMsg.value = '' }, 15000)
 }
 
 async function updateStatus(lead, status) {
