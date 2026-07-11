@@ -41,7 +41,12 @@ export default defineEventHandler(async (event) => {
       await addLeadEvent(id!, 'stage', `Этап: ${from} → ${to}`, author)
     }
     if (body.assignee !== undefined && body.assignee !== cur.assignee) {
-      await addLeadEvent(id!, 'assignee', `Ответственный: ${body.assignee || 'снят'}`, author)
+      let who = 'снят'
+      if (body.assignee) {
+        try { const u = await getUserById(Number(body.assignee)); who = u?.name || u?.login || String(body.assignee) }
+        catch { who = String(body.assignee) }
+      }
+      await addLeadEvent(id!, 'assignee', `Ответственный: ${who}`, author)
     }
   } catch { /* история не критична */ }
 

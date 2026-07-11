@@ -8,6 +8,8 @@
       </div>
       <div class="crm__header-actions">
         <span v-if="mailMsg" class="crm__mail-msg">{{ mailMsg }}</span>
+        <span v-if="tasksDueCount" class="crm__tasks-badge" title="Задачи на сегодня и просроченные">⏰ {{ tasksDueCount }}</span>
+        <button class="crm__refresh" :class="{ 'crm__refresh--on': onlyMine }" @click="onlyMine = !onlyMine" title="Только мои сделки">👤 Мои</button>
         <button class="crm__refresh crm__refresh--mail" @click="checkMail" :disabled="checkingMail" title="Прочитать входящие письма и завести заявки">
           {{ checkingMail ? '⏳ Проверяю…' : '✉ Проверить почту' }}
         </button>
@@ -26,7 +28,7 @@
         <div class="crm__stat-lbl">Новые</div>
       </div>
       <div class="crm__stat" @click="view = 'board'">
-        <div class="crm__stat-num" style="color:#4da6ff">{{ countStage('contacted') + countStage('invoice') + countStage('payment') }}</div>
+        <div class="crm__stat-num" style="color:#4da6ff">{{ countStage('working') + countStage('contacted') + countStage('invoice') + countStage('payment') }}</div>
         <div class="crm__stat-lbl">В работе</div>
       </div>
       <div class="crm__stat" @click="view = 'board'">
@@ -64,6 +66,7 @@
               @click="openDeal(lead)"
             >
               <div class="crm__card-top">
+                <span v-if="taskFlag(lead.id)" class="crm__card-task" :class="'crm__card-task--' + taskFlag(lead.id)" title="Есть задача">⏰</span>
                 <span class="crm__card-name">{{ lead.name || 'Без имени' }}</span>
                 <span v-if="lead.source === 'email'" class="crm__card-src" title="Из письма">✉</span>
               </div>
@@ -71,7 +74,11 @@
               <div v-if="lead.message" class="crm__card-msg">{{ lead.message }}</div>
               <div class="crm__card-foot">
                 <a v-if="lead.phone && lead.phone !== '—'" class="crm__card-phone" :href="'tel:' + lead.phone" @click.stop>{{ lead.phone }}</a>
-                <span class="crm__card-date">{{ fmtDate(lead.created_at) }}</span>
+                <span v-else></span>
+                <span class="crm__card-foot-r">
+                  <span v-if="lead.assignee" class="crm__card-ava" :title="staffName(lead.assignee)">{{ initials(staffName(lead.assignee)) }}</span>
+                  <span class="crm__card-date">{{ fmtDate(lead.created_at) }}</span>
+                </span>
               </div>
             </div>
             <div v-if="!byStage(st.key).length" class="crm__col-empty">—</div>
@@ -142,6 +149,15 @@
           </div>
 
           <div class="deal__body">
+            <!-- Ответственный -->
+            <div class="deal__assignee">
+              <span class="deal__label">Ответственный</span>
+              <select :value="openLead.assignee || ''" @change="setAssignee(openLead, $event.target.value)">
+                <option value="">— не назначен —</option>
+                <option v-for="s in staff" :key="s.id" :value="s.id">{{ s.name }}</option>
+              </select>
+            </div>
+
             <!-- Контакты -->
             <div class="deal__info">
               <div v-if="openLead.phone && openLead.phone !== '—'" class="deal__row"><span>Телефон</span><a :href="'tel:' + openLead.phone">{{ openLead.phone }}</a></div>
@@ -161,6 +177,21 @@
               <div class="deal__label">Пометка (закреплена)</div>
               <input :value="openLead.notes || ''" placeholder="Короткая пометка к сделке…"
                 @blur="updateNotes(openLead, $event.target.value)" @keydown.enter="$event.target.blur()" />
+            </div>
+
+            <!-- Задачи -->
+            <div class="deal__tasks">
+              <div class="deal__label">Задачи и напоминания</div>
+              <div v-for="t in dealTasks" :key="t.id" class="deal__task" :class="{ done: t.done }">
+                <input type="checkbox" :checked="t.done" @change="toggleTask(t)" />
+                <span class="deal__task-title">{{ t.title }}</span>
+                <span class="deal__task-due" :class="taskDueClass(t)">{{ taskDueLabel(t.due_at) }}</span>
+              </div>
+              <div class="deal__task-add">
+                <input v-model="taskTitle" placeholder="Задача: перезвонить, выставить счёт…" @keydown.enter="createTask" />
+                <input v-model="taskDue" type="datetime-local" title="Срок (необязательно)" />
+                <button :disabled="!taskTitle.trim()" @click="createTask" title="Добавить задачу">＋</button>
+              </div>
             </div>
 
             <!-- История -->
@@ -206,6 +237,7 @@ definePageMeta({ layout: 'admin' })
 
 const STAGES = [
   { key: 'new',       label: 'Новая',     color: '#e6b800' },
+  { key: 'working',   label: 'В работе',  color: '#ff8c42' },
   { key: 'contacted', label: 'Связались', color: '#4da6ff' },
   { key: 'invoice',   label: 'Счёт / КП', color: '#a855f7' },
   { key: 'payment',   label: 'Оплата',    color: '#f5a623' },
@@ -219,13 +251,16 @@ const loading = ref(true)
 const leads = ref([])
 const view = ref('board')
 const isAdmin = ref(false)
+const myId = ref(null)
+const onlyMine = ref(false)
+const matchMine = (l) => !onlyMine.value || String(l.assignee) === String(myId.value)
 
 const activeFilter = ref('all')
 const listFilters = [{ key: 'all', label: 'Все' }, ...STAGES.map((s) => ({ key: s.key, label: s.label }))]
 
 const countStage = (k) => leads.value.filter((l) => stageOf(l) === k).length
-const byStage = (k) => leads.value.filter((l) => stageOf(l) === k)
-const filtered = computed(() => activeFilter.value === 'all' ? leads.value : leads.value.filter((l) => stageOf(l) === activeFilter.value))
+const byStage = (k) => leads.value.filter((l) => stageOf(l) === k && matchMine(l))
+const filtered = computed(() => (activeFilter.value === 'all' ? leads.value : leads.value.filter((l) => stageOf(l) === activeFilter.value)).filter(matchMine))
 
 async function loadLeads() {
   loading.value = true
@@ -276,8 +311,9 @@ const noteSaving = ref(false)
 async function openDeal(lead) {
   openLead.value = lead
   events.value = []
+  dealTasks.value = []
   noteText.value = ''
-  await loadEvents(lead.id)
+  await Promise.all([loadEvents(lead.id), loadDealTasks(lead.id)])
 }
 function closeDeal() { openLead.value = null }
 async function loadEvents(id) {
@@ -336,9 +372,76 @@ async function checkMail() {
   setTimeout(() => { mailMsg.value = '' }, 15000)
 }
 
+// ── Сотрудники / ответственные ──
+const staff = ref([])
+async function loadStaff() { try { staff.value = await $fetch('/api/admin/staff') } catch { staff.value = [] } }
+const staffName = (uid) => { const u = staff.value.find((s) => String(s.id) === String(uid)); return u ? u.name : '' }
+const initials = (name) => (name || '').trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase()
+async function setAssignee(lead, uid) {
+  lead.assignee = uid || null
+  try {
+    await $fetch(`/api/admin/leads/${lead.id}`, { method: 'PATCH', body: { assignee: uid || '' } })
+    if (openLead.value && openLead.value.id === lead.id) loadEvents(lead.id)
+  } catch {}
+}
+
+// ── Задачи и напоминания ──
+const openTasks = ref([])
+async function loadTasks() { try { openTasks.value = await $fetch('/api/admin/tasks') } catch { openTasks.value = [] } }
+const endOfToday = () => { const d = new Date(); d.setHours(23, 59, 59, 999); return d }
+const tasksByContact = computed(() => {
+  const m = {}
+  for (const t of openTasks.value) {
+    if (!t.due_at) continue
+    if (!m[t.contact_id] || new Date(t.due_at) < new Date(m[t.contact_id])) m[t.contact_id] = t.due_at
+  }
+  return m
+})
+function taskFlag(leadId) {
+  const due = tasksByContact.value[leadId]
+  if (!due) return null
+  const d = new Date(due)
+  if (d < new Date()) return 'overdue'
+  if (d <= endOfToday()) return 'today'
+  return 'future'
+}
+const tasksDueCount = computed(() => openTasks.value.filter((t) => t.due_at && new Date(t.due_at) <= endOfToday()).length)
+
+const dealTasks = ref([])
+const taskTitle = ref('')
+const taskDue = ref('')
+async function loadDealTasks(id) { try { dealTasks.value = await $fetch(`/api/admin/leads/${id}/tasks`) } catch { dealTasks.value = [] } }
+async function createTask() {
+  const title = taskTitle.value.trim()
+  if (!title) return
+  try {
+    await $fetch(`/api/admin/leads/${openLead.value.id}/tasks`, { method: 'POST', body: { title, due_at: taskDue.value || null } })
+    taskTitle.value = ''; taskDue.value = ''
+    await Promise.all([loadDealTasks(openLead.value.id), loadTasks(), loadEvents(openLead.value.id)])
+  } catch {}
+}
+async function toggleTask(t) {
+  const prev = t.done
+  t.done = !t.done
+  try { await $fetch(`/api/admin/tasks/${t.id}`, { method: 'PATCH', body: { done: t.done } }); await Promise.all([loadTasks(), loadEvents(openLead.value.id)]) }
+  catch { t.done = prev }
+}
+function taskDueLabel(due) {
+  if (!due) return 'без срока'
+  const d = new Date(due)
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+}
+function taskDueClass(t) {
+  if (t.done || !t.due_at) return ''
+  const d = new Date(t.due_at)
+  if (d < new Date()) return 'overdue'
+  if (d <= endOfToday()) return 'today'
+  return ''
+}
+
 onMounted(async () => {
-  try { const me = await $fetch('/api/admin/me'); isAdmin.value = me.role === 'admin' } catch {}
-  await loadLeads()
+  try { const me = await $fetch('/api/admin/me'); isAdmin.value = me.role === 'admin'; myId.value = me.id } catch {}
+  await Promise.all([loadLeads(), loadStaff(), loadTasks()])
 })
 </script>
 
@@ -459,6 +562,33 @@ onMounted(async () => {
 .deal-enter-active .deal, .deal-leave-active .deal { transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); }
 .deal-enter-from, .deal-leave-to { opacity: 0; }
 .deal-enter-from .deal, .deal-leave-to .deal { transform: translateX(100%); }
+
+/* ── Ответственные / задачи ── */
+.crm__refresh--on { border-color: #e6b800; color: #e6b800; }
+.crm__tasks-badge { font-size: 0.78rem; color: #ff8c42; border: 1px solid #4a3320; background: rgba(255,140,66,0.1); border-radius: 20px; padding: 0.25rem 0.7rem; }
+.crm__card-task { font-size: 0.72rem; }
+.crm__card-foot-r { display: inline-flex; align-items: center; gap: 0.4rem; margin-left: auto; }
+.crm__card-ava { width: 20px; height: 20px; border-radius: 50%; background: #2a2a2a; color: #e6b800; font-size: 0.6rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.deal__assignee { display: flex; flex-direction: column; gap: 0.35rem; }
+.deal__assignee select { background: #141414; border: 1px solid #262626; border-radius: 8px; padding: 0.5rem 0.6rem; color: #ddd; font-family: inherit; font-size: 0.82rem; outline: none; }
+.deal__assignee select:focus { border-color: #e6b800; }
+.deal__tasks { display: flex; flex-direction: column; gap: 0.4rem; }
+.deal__task { display: flex; align-items: center; gap: 0.5rem; background: #141414; border: 1px solid #202020; border-radius: 8px; padding: 0.45rem 0.6rem; }
+.deal__task.done { opacity: 0.55; }
+.deal__task.done .deal__task-title { text-decoration: line-through; }
+.deal__task input[type=checkbox] { accent-color: #e6b800; cursor: pointer; flex-shrink: 0; }
+.deal__task-title { flex: 1; color: #ccc; font-size: 0.82rem; }
+.deal__task-due { font-size: 0.72rem; color: #666; white-space: nowrap; }
+.deal__task-due.today { color: #f5a623; }
+.deal__task-due.overdue { color: #ff6b6b; font-weight: 600; }
+.deal__task-add { display: flex; gap: 0.35rem; }
+.deal__task-add input { background: #141414; border: 1px solid #262626; border-radius: 8px; padding: 0.45rem 0.5rem; color: #ddd; font-family: inherit; font-size: 0.78rem; outline: none; min-width: 0; }
+.deal__task-add input:not([type=datetime-local]) { flex: 1; }
+.deal__task-add input:focus { border-color: #e6b800; }
+.deal__task-add button { background: #e6b800; color: #0a0a0a; border: none; border-radius: 8px; width: 34px; font-size: 1rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.deal__task-add button:disabled { opacity: 0.4; cursor: not-allowed; }
+.deal__ev--task .deal__ev-dot { background: #ff8c42; }
+.deal__ev--assignee .deal__ev-dot { background: #a855f7; }
 
 @media (max-width: 640px) {
   .crm__stats { grid-template-columns: repeat(2, 1fr); }

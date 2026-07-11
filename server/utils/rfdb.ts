@@ -105,6 +105,82 @@ export async function getLeadEvents(contactId: number | string): Promise<any[]> 
   return rows
 }
 
+// ── Задачи и напоминания по сделкам ──
+let tasksTableReady = false
+export async function ensureTasksTable(): Promise<void> {
+  if (tasksTableReady) return
+  const db = getPool()
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS lead_tasks (
+      id         BIGSERIAL PRIMARY KEY,
+      contact_id BIGINT NOT NULL,
+      title      TEXT NOT NULL,
+      due_at     TIMESTAMPTZ,
+      done       BOOLEAN NOT NULL DEFAULT false,
+      assignee   TEXT,
+      author     TEXT NOT NULL DEFAULT '',
+      notified   BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`)
+  await db.query(`CREATE INDEX IF NOT EXISTS lead_tasks_contact_idx ON lead_tasks (contact_id)`)
+  await db.query(`CREATE INDEX IF NOT EXISTS lead_tasks_open_idx ON lead_tasks (done, due_at)`)
+  tasksTableReady = true
+}
+
+export async function addTask(row: { contact_id: number | string; title: string; due_at?: string | null; assignee?: string | null; author?: string }): Promise<any> {
+  await ensureTasksTable()
+  const { rows } = await getPool().query(
+    `INSERT INTO lead_tasks (contact_id, title, due_at, assignee, author) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [row.contact_id, String(row.title).slice(0, 300), row.due_at || null, row.assignee || null, row.author || ''],
+  )
+  return rows[0]
+}
+
+export async function listTasksForLead(contactId: number | string): Promise<any[]> {
+  await ensureTasksTable()
+  const { rows } = await getPool().query(
+    `SELECT * FROM lead_tasks WHERE contact_id = $1 ORDER BY done ASC, due_at ASC NULLS LAST, created_at ASC`,
+    [contactId],
+  )
+  return rows
+}
+
+export async function listOpenTasks(): Promise<any[]> {
+  await ensureTasksTable()
+  const { rows } = await getPool().query(
+    `SELECT t.*, c.name AS contact_name FROM lead_tasks t JOIN contacts c ON c.id = t.contact_id
+     WHERE t.done = false ORDER BY t.due_at ASC NULLS LAST, t.created_at ASC`,
+  )
+  return rows
+}
+
+export async function setTask(id: number | string, fields: { done?: boolean; title?: string; due_at?: string | null }): Promise<void> {
+  await ensureTasksTable()
+  const sets: string[] = []
+  const vals: unknown[] = []
+  let i = 1
+  if (fields.done !== undefined)   { sets.push(`done = $${i++}`);   vals.push(fields.done); if (fields.done) { sets.push(`notified = true`) } }
+  if (fields.title !== undefined)  { sets.push(`title = $${i++}`);  vals.push(String(fields.title).slice(0, 300)) }
+  if (fields.due_at !== undefined) { sets.push(`due_at = $${i++}`); vals.push(fields.due_at || null); sets.push(`notified = false`) }
+  if (!sets.length) return
+  vals.push(id)
+  await getPool().query(`UPDATE lead_tasks SET ${sets.join(', ')} WHERE id = $${i}`, vals)
+}
+
+export async function dueTasksToNotify(): Promise<any[]> {
+  await ensureTasksTable()
+  const { rows } = await getPool().query(
+    `SELECT t.*, c.name AS contact_name, c.phone AS contact_phone
+     FROM lead_tasks t JOIN contacts c ON c.id = t.contact_id
+     WHERE t.done = false AND t.notified = false AND t.due_at IS NOT NULL AND t.due_at <= now()`,
+  )
+  return rows
+}
+
+export async function markTaskNotified(id: number | string): Promise<void> {
+  await getPool().query(`UPDATE lead_tasks SET notified = true WHERE id = $1`, [id])
+}
+
 // Какие ext_id (Message-ID писем) уже импортированы — чтобы не заводить дубли заявок
 export async function existingExtIds(ids: string[]): Promise<Set<string>> {
   if (!ids.length) return new Set()
