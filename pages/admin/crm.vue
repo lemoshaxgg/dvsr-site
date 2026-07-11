@@ -2,7 +2,13 @@
   <div>
     <div class="crm__header">
       <h1 class="crm__title">Заявки</h1>
-      <button class="crm__refresh" @click="loadLeads" :disabled="loading">↻ Обновить</button>
+      <div class="crm__header-actions">
+        <span v-if="mailMsg" class="crm__mail-msg">{{ mailMsg }}</span>
+        <button class="crm__refresh crm__refresh--mail" @click="checkMail" :disabled="checkingMail" title="Прочитать входящие письма и завести заявки">
+          {{ checkingMail ? '⏳ Проверяю…' : '✉ Проверить почту' }}
+        </button>
+        <button class="crm__refresh" @click="loadLeads" :disabled="loading">↻ Обновить</button>
+      </div>
     </div>
 
     <!-- Stats -->
@@ -120,6 +126,24 @@ async function loadLeads() {
   loading.value = false
 }
 
+const checkingMail = ref(false)
+const mailMsg = ref('')
+async function checkMail() {
+  checkingMail.value = true
+  mailMsg.value = ''
+  try {
+    const r = await $fetch('/api/admin/mail/sync', { method: 'POST' })
+    if (r.reason === 'not_configured') mailMsg.value = 'Почта не подключена (нет IMAP-настроек)'
+    else if (!r.ok) mailMsg.value = 'Не удалось подключиться к почте'
+    else if (r.imported > 0) { mailMsg.value = `Заведено заявок из писем: ${r.imported}`; await loadLeads() }
+    else mailMsg.value = 'Новых писем нет'
+  } catch {
+    mailMsg.value = 'Ошибка проверки почты'
+  }
+  checkingMail.value = false
+  setTimeout(() => { mailMsg.value = '' }, 7000)
+}
+
 async function updateStatus(lead, status) {
   lead.status = status
   try {
@@ -171,6 +195,10 @@ onMounted(async () => {
 }
 .crm__refresh:hover { color: #fff; border-color: #555; }
 .crm__refresh:disabled { opacity: 0.4; cursor: not-allowed; }
+.crm__header-actions { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; flex-wrap: wrap; }
+.crm__refresh--mail { border-color: #3a6ea5; color: #7fb3e6; }
+.crm__refresh--mail:hover:not(:disabled) { color: #fff; border-color: #4a86c5; background: rgba(58,110,165,0.15); }
+.crm__mail-msg { font-size: 0.78rem; color: #7fb3e6; }
 
 .crm__stats {
   display: grid;

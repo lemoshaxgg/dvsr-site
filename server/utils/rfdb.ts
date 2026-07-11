@@ -55,7 +55,37 @@ export async function ensureTable(): Promise<void> {
   await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'new'`)
   await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT ''`)
   await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`)
+  await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'site'`)
+  await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS ext_id TEXT`)
+  await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS contacts_ext_id_uidx ON contacts (ext_id) WHERE ext_id IS NOT NULL`)
   tableReady = true
+}
+
+// Какие ext_id (Message-ID писем) уже импортированы — чтобы не заводить дубли заявок
+export async function existingExtIds(ids: string[]): Promise<Set<string>> {
+  if (!ids.length) return new Set()
+  await ensureTable()
+  const { rows } = await getPool().query(
+    'SELECT ext_id FROM contacts WHERE ext_id = ANY($1)', [ids],
+  )
+  return new Set(rows.map((r: any) => r.ext_id))
+}
+
+// Вставка заявки из письма (с источником и защитой от дублей по ext_id)
+export async function insertLeadDedup(
+  row: ContactRow & { source?: string; ext_id?: string | null },
+): Promise<boolean> {
+  await ensureTable()
+  if (row.ext_id) {
+    const { rows } = await getPool().query('SELECT 1 FROM contacts WHERE ext_id = $1 LIMIT 1', [row.ext_id])
+    if (rows.length) return false
+  }
+  await getPool().query(
+    `INSERT INTO contacts (name, phone, email, message, item_title, item_price, source, ext_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [row.name, row.phone, row.email, row.message, row.item_title, row.item_price, row.source || 'site', row.ext_id || null],
+  )
+  return true
 }
 
 export async function ensureCatalogCmsTable(): Promise<void> {
