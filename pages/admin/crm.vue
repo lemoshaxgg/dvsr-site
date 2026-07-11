@@ -13,6 +13,7 @@
         <button class="crm__refresh crm__refresh--mail" @click="checkMail" :disabled="checkingMail" title="Прочитать входящие письма и завести заявки">
           {{ checkingMail ? '⏳ Проверяю…' : '✉ Проверить почту' }}
         </button>
+        <span class="crm__live" title="CRM обновляется автоматически"><span class="crm__live-dot"></span>live</span>
         <button class="crm__refresh" @click="loadLeads" :disabled="loading">↻ Обновить</button>
       </div>
     </div>
@@ -439,10 +440,26 @@ function taskDueClass(t) {
   return ''
 }
 
+// Тихое авто-обновление (без мигания «Загрузка»). Не трогаем, если пользователь
+// перетаскивает карточку, открыл сделку или печатает в поле — чтобы не мешать.
+async function silentRefresh() {
+  if (dragId.value || openLead.value) return
+  const ae = document.activeElement
+  if (ae && ['INPUT', 'TEXTAREA', 'SELECT'].includes(ae.tagName)) return
+  try {
+    const [l, t] = await Promise.all([$fetch('/api/admin/leads'), $fetch('/api/admin/tasks')])
+    leads.value = l
+    openTasks.value = t
+  } catch {}
+}
+
+let pollTimer = null
 onMounted(async () => {
   try { const me = await $fetch('/api/admin/me'); isAdmin.value = me.role === 'admin'; myId.value = me.id } catch {}
   await Promise.all([loadLeads(), loadStaff(), loadTasks()])
+  pollTimer = setInterval(() => { if (!document.hidden) silentRefresh() }, 20000)
 })
+onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
 </script>
 
 <style scoped>
@@ -566,6 +583,9 @@ onMounted(async () => {
 /* ── Ответственные / задачи ── */
 .crm__refresh--on { border-color: #e6b800; color: #e6b800; }
 .crm__tasks-badge { font-size: 0.78rem; color: #ff8c42; border: 1px solid #4a3320; background: rgba(255,140,66,0.1); border-radius: 20px; padding: 0.25rem 0.7rem; }
+.crm__live { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.66rem; color: #4caf50; text-transform: uppercase; letter-spacing: 0.05em; }
+.crm__live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4caf50; animation: livePulse 2s infinite; }
+@keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(76,175,80,0.5); } 70% { box-shadow: 0 0 0 6px rgba(76,175,80,0); } 100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); } }
 .crm__card-task { font-size: 0.72rem; }
 .crm__card-foot-r { display: inline-flex; align-items: center; gap: 0.4rem; margin-left: auto; }
 .crm__card-ava { width: 20px; height: 20px; border-radius: 50%; background: #2a2a2a; color: #e6b800; font-size: 0.6rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }

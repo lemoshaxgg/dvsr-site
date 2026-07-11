@@ -1,6 +1,6 @@
 import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
-import { insertLeadDedup, existingExtIds } from './rfdb'
+import { insertLeadDedup, existingSeenExtIds, markMailSeen, deleteLeadByExtId } from './rfdb'
 
 // Чтение входящей почты по IMAP и автосоздание заявок в CRM.
 // ENV: MAIL_IMAP_USER, MAIL_IMAP_PASS (пароль для внешних приложений!),
@@ -18,9 +18,17 @@ export function isMailConfigured(): boolean {
 
 const PHONE_RE = /(?:\+7|8)[\s\-()]*\d(?:[\s\-()]*\d){9}/
 
-// ── Разбор письма в поля заявки через YandexGPT (с надёжным фолбэком) ──
-async function parseWithGpt(subject: string, text: string, fromName: string, fromEmail: string) {
+// Эвристика спама/не-заявки (фолбэк, если ИИ недоступен)
+const SPAM_RE = /\b(seo|сео|продвижени|раскрутк|реклам|рассылк|подписк|newsletter|unsubscribe|отпис|вебинар|инвестиц|казино|заработок|marketing|promo|уведомлени)\b/i
+function looksLikeSpam(subject: string, fromEmail: string, text: string): boolean {
+  if (/noreply|no-reply|no_reply|donotreply|do-not-reply|mailer-daemon|postmaster|notif|newsletter|team@|news@|robot@|support@mail|@farpost/i.test(fromEmail)) return true
+  return SPAM_RE.test(subject + ' ' + text.slice(0, 600))
+}
+
+// ── ИИ-фильтр: заявка или мусор + разбор в поля заявки (YandexGPT) ──
+async function parseEmail(subject: string, text: string, fromName: string, fromEmail: string) {
   const fallback = {
+    is_lead: !looksLikeSpam(subject, fromEmail, text),
     name: fromName || (fromEmail.split('@')[0] || 'Клиент'),
     phone: (text.match(PHONE_RE)?.[0] || '').trim(),
     message: ((subject ? subject + '. ' : '') + text).slice(0, 1000).trim() || subject || '(письмо без текста)',
@@ -30,9 +38,10 @@ async function parseWithGpt(subject: string, text: string, fromName: string, fro
   if (!folder || !apiKey) return fallback
 
   const prompt =
-    'Ты обрабатываешь входящее письмо клиента строительной компании ДСР (Владивосток). ' +
-    'Извлеки данные и верни СТРОГО JSON без пояснений и без markdown: ' +
-    '{"name":"имя клиента или пусто","phone":"телефон в формате +7XXXXXXXXXX или пусто","message":"краткая суть запроса — что нужно клиенту, 1-3 предложения"}.\n\n' +
+    'Ты — фильтр входящей почты строительной компании ДСР (Владивосток: стройматериалы, заборы, септики, кабель, оборудование, услуги). ' +
+    'Реши, это ЗАЯВКА/обращение потенциального КЛИЕНТА (запрос цены, заказ, вопрос о товаре/услуге, желание купить/сотрудничать как покупатель) — или НЕТ. ' +
+    'НЕ заявка: спам, рекламные предложения чужих услуг (SEO, продвижение сайта, реклама), рассылки/новости, авто-уведомления сервисов (Farpost, Mail.ru, соцсети, банки), системные письма. ' +
+    'Верни СТРОГО JSON без пояснений и markdown: {"is_lead":true или false,"name":"имя или пусто","phone":"+7XXXXXXXXXX или пусто","message":"краткая суть запроса, 1-3 предложения"}.\n\n' +
     `От: ${fromName} <${fromEmail}>\nТема: ${subject}\nТекст письма:\n${text.slice(0, 3000)}`
 
   try {
@@ -41,7 +50,7 @@ async function parseWithGpt(subject: string, text: string, fromName: string, fro
       headers: { 'Content-Type': 'application/json', Authorization: `Api-Key ${apiKey}` },
       body: JSON.stringify({
         modelUri: `gpt://${folder}/${process.env.YANDEX_GPT_MODEL || 'yandexgpt-lite'}/latest`,
-        completionOptions: { stream: false, temperature: 0.2, maxTokens: '500' },
+        completionOptions: { stream: false, temperature: 0.1, maxTokens: '500' },
         messages: [{ role: 'user', text: prompt }],
       }),
     })
@@ -52,6 +61,7 @@ async function parseWithGpt(subject: string, text: string, fromName: string, fro
     if (!m) return fallback
     const p = JSON.parse(m[0])
     return {
+      is_lead: p.is_lead === true || p.is_lead === 'true',
       name: String(p.name || fallback.name).trim().slice(0, 100) || fallback.name,
       phone: String(p.phone || fallback.phone).trim().slice(0, 20),
       message: String(p.message || fallback.message).trim().slice(0, 1000) || fallback.message,
@@ -119,11 +129,11 @@ export async function syncMailToLeads(): Promise<{ ok: boolean; checked: number;
         })
       }
 
-      // 2) отсеиваем уже импортированные (по ext_id)
-      const seen = await existingExtIds(cand.map((c) => c.extId))
+      // 2) отсеиваем уже ОБРАБОТАННЫЕ письма (и заявки, и мусор) — по ext_id
+      const seen = await existingSeenExtIds(cand.map((c) => c.extId))
       const fresh = cand.filter((c) => !seen.has(c.extId)).slice(-MAX_NEW)
 
-      // 3) для новых — тянем тело, парсим, заводим заявку
+      // 3) для новых — тянем тело, классифицируем через ИИ, заводим ТОЛЬКО заявки
       for (const c of fresh) {
         checked++
         const one: any = await client.fetchOne(String(c.uid), { source: true }, { uid: true })
@@ -132,7 +142,14 @@ export async function syncMailToLeads(): Promise<{ ok: boolean; checked: number;
         const text = (mail.text || (mail.html ? String(mail.html).replace(/<[^>]+>/g, ' ') : '') || '')
           .replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim()
         const subject = c.subject || mail.subject || ''
-        const lead = await parseWithGpt(subject, text, c.fromName, c.fromEmail)
+        const lead = await parseEmail(subject, text, c.fromName, c.fromEmail)
+
+        // запомнить письмо как обработанное (чтобы ИИ не переоценивал его повторно)
+        await markMailSeen(c.extId, lead.is_lead, subject)
+        if (!lead.is_lead) {
+          try { await deleteLeadByExtId(c.extId) } catch { /* убрать ранее заведённый спам */ }
+          continue // спам / реклама / уведомление — не заявка
+        }
 
         const ok = await insertLeadDedup({
           name: lead.name || c.fromName || 'Клиент',

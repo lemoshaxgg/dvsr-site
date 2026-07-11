@@ -71,6 +71,40 @@ export async function ensureTable(): Promise<void> {
   tableReady = true
 }
 
+// Удалить заявку, заведённую из письма (для автоочистки спама после переклассификации)
+export async function deleteLeadByExtId(extId: string): Promise<number> {
+  await ensureTable()
+  const { rowCount } = await getPool().query(`DELETE FROM contacts WHERE ext_id = $1 AND source = 'email'`, [extId])
+  return rowCount || 0
+}
+
+// ── Обработанные письма (заявка/не-заявка) — чтобы не гонять спам через ИИ повторно ──
+let mailSeenReady = false
+export async function ensureMailSeenTable(): Promise<void> {
+  if (mailSeenReady) return
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS mail_seen (
+      ext_id     TEXT PRIMARY KEY,
+      is_lead    BOOLEAN NOT NULL DEFAULT false,
+      subject    TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`)
+  mailSeenReady = true
+}
+export async function existingSeenExtIds(ids: string[]): Promise<Set<string>> {
+  if (!ids.length) return new Set()
+  await ensureMailSeenTable()
+  const { rows } = await getPool().query('SELECT ext_id FROM mail_seen WHERE ext_id = ANY($1)', [ids])
+  return new Set(rows.map((r: any) => r.ext_id))
+}
+export async function markMailSeen(extId: string, isLead: boolean, subject: string): Promise<void> {
+  await ensureMailSeenTable()
+  await getPool().query(
+    `INSERT INTO mail_seen (ext_id, is_lead, subject) VALUES ($1, $2, $3) ON CONFLICT (ext_id) DO NOTHING`,
+    [extId, isLead, String(subject || '').slice(0, 300)],
+  )
+}
+
 // ── История сделки (таймлайн: заметки, смены этапа, письма, звонки) ──
 let eventsTableReady = false
 export async function ensureEventsTable(): Promise<void> {
