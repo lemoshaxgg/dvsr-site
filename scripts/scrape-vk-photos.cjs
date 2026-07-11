@@ -22,7 +22,8 @@ async function pool(items, limit, fn) {
   await Promise.all(Array.from({ length: limit }, async () => { while (i < items.length) { const idx = i++; out[idx] = await fn(items[idx]); } }));
   return out;
 }
-const lastToken = (s) => { const t = String(s).trim().split(/\s+/).pop() || ''; return t.replace(/[^0-9A-Za-zА-Яа-я/.\-]+$/g, '').toUpperCase(); };
+// нормализованный артикул: только буквы/цифры, без дефисов/регистра (устойчиво к формату)
+const normArt = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const isBad = (u) => /no_image|placeholder|logo|banner|nophoto/i.test(u);
 const toOriginal = (u) => u.replace('/image/cache/', '/image/').replace(/-\d+x\d+(\.\w+)$/, '$1');
 
@@ -48,9 +49,17 @@ const toOriginal = (u) => u.replace('/image/cache/', '/image/').replace(/-\d+x\d
       cards.each((_, el) => {
         const $e = $(el);
         const a = $e.find('a[title]').first();
-        const art = lastToken(a.attr('title') || $e.find('img').attr('alt') || '');
+        const title = a.attr('title') || $e.find('img').attr('alt') || '';
         const src = $e.find('.product-thumb__image img, img.img-responsive').first().attr('src') || '';
-        if (art && src && !isBad(src) && !artImg.has(art)) artImg.set(art, src);
+        if (!src || isBad(src)) return;
+        const keys = new Set();
+        // 1) артикул = последний токен подписи
+        const tArt = normArt(String(title).trim().split(/\s+/).pop() || '');
+        if (tArt.length >= 4) keys.add(tArt);
+        // 2) артикул из имени файла картинки (…img-SQ0206-0146-100x100.jpg)
+        const um = src.match(/img-([\w-]+?)-\d+x\d+\.\w+$/i) || src.match(/\/([\w-]+?)-\d+x\d+\.\w+$/i);
+        if (um) { const uArt = normArt(um[1]); if (uArt.length >= 4) keys.add(uArt); }
+        for (const k of keys) if (!artImg.has(k)) artImg.set(k, src);
       });
       if (cards.length < 100) break;
     }
@@ -64,7 +73,7 @@ const toOriginal = (u) => u.replace('/image/cache/', '/image/').replace(/-\d+x\d
   await pool(targets, 6, async (it) => {
     const dest = path.join(PDIR, `${it.id}.jpg`);
     if (fs.existsSync(dest)) { exists++; return; }
-    const src = artImg.get(String(it.art).trim().toUpperCase());
+    const src = artImg.get(normArt(it.art));
     if (!src) { miss++; return; }
     for (const url of [toOriginal(src), src]) {
       try {
