@@ -58,7 +58,51 @@ export async function ensureTable(): Promise<void> {
   await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'site'`)
   await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS ext_id TEXT`)
   await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS contacts_ext_id_uidx ON contacts (ext_id) WHERE ext_id IS NOT NULL`)
+  // Воронка (amoCRM-стиль): этап сделки. Мигрируем из старого status.
+  await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS stage TEXT`)
+  await db.query(`ALTER TABLE contacts ADD COLUMN IF NOT EXISTS assignee TEXT`)
+  await db.query(`
+    UPDATE contacts SET stage = CASE
+      WHEN status = 'in_work' THEN 'contacted'
+      WHEN status = 'done'    THEN 'won'
+      WHEN status = 'spam'    THEN 'lost'
+      ELSE 'new' END
+    WHERE stage IS NULL`)
   tableReady = true
+}
+
+// ── История сделки (таймлайн: заметки, смены этапа, письма, звонки) ──
+let eventsTableReady = false
+export async function ensureEventsTable(): Promise<void> {
+  if (eventsTableReady) return
+  await getPool().query(`
+    CREATE TABLE IF NOT EXISTS lead_events (
+      id         BIGSERIAL PRIMARY KEY,
+      contact_id BIGINT NOT NULL,
+      kind       TEXT NOT NULL,
+      text       TEXT NOT NULL DEFAULT '',
+      author     TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`)
+  await getPool().query(`CREATE INDEX IF NOT EXISTS lead_events_contact_idx ON lead_events (contact_id)`)
+  eventsTableReady = true
+}
+
+export async function addLeadEvent(contactId: number | string, kind: string, text: string, author = ''): Promise<void> {
+  await ensureEventsTable()
+  await getPool().query(
+    `INSERT INTO lead_events (contact_id, kind, text, author) VALUES ($1, $2, $3, $4)`,
+    [contactId, kind, String(text || '').slice(0, 2000), String(author || '').slice(0, 100)],
+  )
+}
+
+export async function getLeadEvents(contactId: number | string): Promise<any[]> {
+  await ensureEventsTable()
+  const { rows } = await getPool().query(
+    `SELECT id, kind, text, author, created_at FROM lead_events WHERE contact_id = $1 ORDER BY created_at ASC`,
+    [contactId],
+  )
+  return rows
 }
 
 // Какие ext_id (Message-ID писем) уже импортированы — чтобы не заводить дубли заявок
