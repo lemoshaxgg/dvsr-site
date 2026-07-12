@@ -400,22 +400,13 @@ const photoIdx = ref(0)
 const failedPhotos = reactive(new Set())
 const galleryPhotos = computed(() => {
   if (!item.value) return []
-  // vk_ товары: скачанные фото содержат логотип поставщика — не показываем
-  if (typeof item.value.category === 'string' && item.value.category.startsWith('vk_')) {
-    return (item.value.photos || []).filter(p => p && /^https?:/.test(p) && !failedPhotos.has(p))
-  }
-  if (item.value.photos && item.value.photos.length > 1) {
-    return item.value.photos.filter(p => p && !failedPhotos.has(p))
-  }
-  // Внешнее фото (CDN Сигнала) — используем напрямую, без попытки products/{id}.jpg
-  if (item.value.photo && /^https?:/.test(item.value.photo)) {
-    return [item.value.photo].filter(p => !failedPhotos.has(p))
-  }
-  const catalogPhoto = `/catalog/products/${item.value.id}.jpg`
-  if (!failedPhotos.has(catalogPhoto)) return [catalogPhoto]
-  const dataPhoto = item.value.photo || item.value.photos?.[0] || null
-  if (dataPhoto && !failedPhotos.has(dataPhoto)) return [dataPhoto]
-  return []
+  const it = item.value
+  if (it.noPhoto) return []
+  // Многофото — карусель
+  if (it.photos && it.photos.length > 1) return it.photos.filter(p => p && !failedPhotos.has(p))
+  // Одиночное фото (локальное /catalog/... или внешний URL). Без угадаек по id.
+  const p = it.photo || (it.photos && it.photos[0])
+  return p && !failedPhotos.has(p) ? [p] : []
 })
 function onPhotoError(src) {
   if (!src) return

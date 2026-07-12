@@ -772,25 +772,17 @@ const failedPrimaryPhotos = reactive(new Set())
 const failedFallbackPhotos = reactive(new Set())
 
 function productPhoto(item) {
-  // Явно помеченные как «без фото» — не показываем и не запрашиваем
   if (item.noPhoto) return null
-  // Для vk_ товаров — скачанные фото содержат логотип поставщика, не показываем
-  if (typeof item.category === 'string' && item.category.startsWith('vk_')) return null
-  // Внешнее фото (CDN Сигнала, Интеркабель и др.)
-  if (item.photo && /^https?:/.test(item.photo)) {
-    return failedFallbackPhotos.has(item.id) ? null : item.photo
-  }
-  if (!failedPrimaryPhotos.has(item.id)) return `/catalog/products/${item.id}.jpg`
-  if (failedFallbackPhotos.has(item.id)) return null
-  return item.photo || item.photos?.[0] || null
+  // Показываем фото, если оно задано явно (локальное /catalog/... или внешний URL).
+  // Никаких угадаек по id — иначе на товарах без фото мелькает 404.
+  const p = item.photo || (item.photos && item.photos[0])
+  if (!p) return null
+  return failedPrimaryPhotos.has(item.id) ? null : p
 }
 
 function onPhotoError(e, item) {
-  if (!failedPrimaryPhotos.has(item.id)) {
-    failedPrimaryPhotos.add(item.id)
-  } else {
-    failedFallbackPhotos.add(item.id)
-  }
+  // Фото не загрузилось (битый URL / нет файла) → показываем плейсхолдер «Фото скоро»
+  failedPrimaryPhotos.add(item.id)
 }
 
 const panelsInfoOpen = ref(true)
