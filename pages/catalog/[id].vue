@@ -404,7 +404,14 @@ const galleryPhotos = computed(() => {
   if (it.noPhoto) return []
   // Многофото — карусель
   if (it.photos && it.photos.length > 1) return it.photos.filter(p => p && !failedPhotos.has(p))
-  // Одиночное фото (локальное /catalog/... или внешний URL). Без угадаек по id.
+  // Ядро (id < 1000): приоритет пофайловое /catalog/products/{id}.jpg, откат на item.photo
+  if (it.id < 1000) {
+    const byId = `/catalog/products/${it.id}.jpg`
+    if (!failedPhotos.has(byId)) return [byId]
+    const p = it.photo || (it.photos && it.photos[0])
+    return p && !failedPhotos.has(p) ? [p] : []
+  }
+  // Партнёрские — только явное item.photo, без угадаек по id
   const p = it.photo || (it.photos && it.photos[0])
   return p && !failedPhotos.has(p) ? [p] : []
 })

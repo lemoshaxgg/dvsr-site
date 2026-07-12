@@ -773,16 +773,21 @@ const failedFallbackPhotos = reactive(new Set())
 
 function productPhoto(item) {
   if (item.noPhoto) return null
-  // Показываем фото, если оно задано явно (локальное /catalog/... или внешний URL).
-  // Никаких угадаек по id — иначе на товарах без фото мелькает 404.
+  // Ядро (id < 1000): приоритет — пофайловое фото /catalog/products/{id}.jpg (правильное
+  // на каждый товар), откат на item.photo (общий плейсхолдер), потом «Фото скоро».
+  if (item.id < 1000) {
+    if (!failedPrimaryPhotos.has(item.id)) return `/catalog/products/${item.id}.jpg`
+    const p = item.photo || (item.photos && item.photos[0])
+    return p && !failedFallbackPhotos.has(item.id) ? p : null
+  }
+  // Партнёрские (id ≥ 1000): только явное item.photo, без угадаек по id (иначе мелькает 404).
   const p = item.photo || (item.photos && item.photos[0])
-  if (!p) return null
-  return failedPrimaryPhotos.has(item.id) ? null : p
+  return p && !failedPrimaryPhotos.has(item.id) ? p : null
 }
 
 function onPhotoError(e, item) {
-  // Фото не загрузилось (битый URL / нет файла) → показываем плейсхолдер «Фото скоро»
-  failedPrimaryPhotos.add(item.id)
+  if (item.id < 1000 && !failedPrimaryPhotos.has(item.id)) failedPrimaryPhotos.add(item.id)
+  else failedFallbackPhotos.add(item.id)
 }
 
 const panelsInfoOpen = ref(true)
