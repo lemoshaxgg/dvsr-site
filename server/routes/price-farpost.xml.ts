@@ -10,6 +10,17 @@ import { pshItems } from '~/data/catalog-psh.js'
 const SITE = 'https://dsr-dv.ru'
 const MARKUP = 1.15
 
+// Защитный дисклеймер под каждым товаром: цена не является публичной офертой.
+const DISCLAIMER =
+  'Цены и наличие указаны ориентировочно и не являются публичной офертой (ст. 437 ГК РФ). ' +
+  'Уточняйте актуальную стоимость и наличие товара у менеджеров ДСР: +7 914 329-29-29.'
+
+// Для недорогих позиций цена оптовая — зависит от объёма.
+const WHOLESALE_MAX = 500
+const VOLUME_NOTE =
+  'ВНИМАНИЕ: указана оптовая цена (за объём от 50 шт / 50 м). ' +
+  'При меньшем количестве стоимость уточняйте у менеджеров.'
+
 function sellPrice(it: any): number | null {
   if (it.fixedPrice) return Math.round(it.fixedPrice)
   if (it.basePrice) return Math.round((it.basePrice * MARKUP) / 10) * 10
@@ -28,7 +39,10 @@ function clean(s: any): string {
     .replace(/&([a-z]+);/gi, (m, n) => ENT[n.toLowerCase()] ?? m)
     .replace(/\s+/g, ' ').trim()
 }
-const xml = (s: any) => clean(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+// экранирование + удаление недопустимых для XML управляющих символов
+const xml = (s: any) => clean(s)
+  .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 function photo(it: any): string {
   const p = it.photo || (it.photos && it.photos[0]) || ''
   if (!p) return ''
@@ -57,14 +71,16 @@ function build(): string {
     seen.add(art)
     const label = catMap[it.category] || it.category || 'Прочее'
     const pic = photo(it)
+    const price = sellPrice(it)!
+    const note = (price <= WHOLESALE_MAX ? VOLUME_NOTE + ' ' : '') + DISCLAIMER
     return `<offer id="${xml(art)}" available="true">`
       + `<name>${xml(it.title)}</name>`
-      + `<price>${sellPrice(it)}</price><currencyId>RUB</currencyId>`
+      + `<price>${price}</price><currencyId>RUB</currencyId>`
       + `<categoryId>${catId[label]}</categoryId>`
       + (pic ? `<picture>${xml(pic)}</picture>` : '')
       + `<vendorCode>${xml(art)}</vendorCode>`
       + (it.unit ? `<param name="Ед. изм.">${xml(it.unit)}</param>` : '')
-      + `<description>${xml(it.description || it.title)}</description>`
+      + `<description>${xml((it.description || it.title) + '. ' + note)}</description>`
       + `</offer>`
   })
 

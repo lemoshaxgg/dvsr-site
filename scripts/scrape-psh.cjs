@@ -46,7 +46,7 @@ function parseProducts($, catNames) {
     const priceRaw = $e.find('.price b').first().text().replace(/[^\d]/g, '');
     const price = priceRaw ? +priceRaw : 0;
     const av = $e.find('.price .av, .item-t .av').first().text().trim();
-    const styleImg = ($e.find('[style*=productfiles]').attr('style') || '').match(/url\(.([^)]*productfiles[^)]*)./);
+    const styleImg = ($e.find('[style*=productfiles]').attr('style') || '').match(/url\(['"]?([^)'"]*productfiles[^)'"]*)['"]?\)/);
     const img = styleImg ? styleImg[1] : '';
     list.push({ prodId, catId, catName: catNames[catId] || '', name, art, price, avail: av, img, url: BASE + href });
   });

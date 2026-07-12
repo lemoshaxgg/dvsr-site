@@ -30,6 +30,18 @@ function sellPrice(it) {
   if (it.basePrice) return Math.round((it.basePrice * MARKUP) / 10) * 10
   return null
 }
+
+const Y_DISCLAIMER = 'Цена ориентировочна, не оферта — уточняйте у менеджера.'
+const Y_VOLUME = 'Опт. цена (от 50 шт/м), при меньшем — уточняйте у менеджера.'
+const yNote = (price) => (price <= 500 ? Y_VOLUME + ' ' : '') + Y_DISCLAIMER
+// описание + пометка, всё в пределах 250 символов (пометка не обрезается)
+function ydesc(it) {
+  const note = yNote(sellPrice(it))
+  const room = Math.max(40, 250 - note.length - 2)
+  const base = clean(it.description || it.title)
+  const cut = base.length > room ? base.slice(0, room).replace(/\s+\S*$/, '') : base
+  return (cut ? cut + '. ' : '') + note
+}
 function shortDesc(s) {
   const t = clean(s)
   if (t.length <= 250) return t
@@ -46,7 +58,7 @@ const rows = priced.map(it => ({
   'Название': clean(it.title),
   'Цена': sellPrice(it),
   'Категория': clean(catMap[it.category] || it.category),
-  'Описание': shortDesc(it.description || it.title),
+  'Описание': ydesc(it),
 }))
 
 const ws = XLSX.utils.json_to_sheet(rows, { header: HEADER })

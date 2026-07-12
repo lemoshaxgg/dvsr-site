@@ -57,6 +57,7 @@
 
             <div class="pp__price-row">
               <span class="pp__price" :class="{ 'pp__price--ask': !priceFrom(item) }">{{ priceFrom(item) || 'Уточнить актуальную цену' }}</span>
+              <span v-if="isWholesale(item)" class="pp__whole">⚠ {{ WHOLESALE_NOTE }}</span>
               <span class="pp__price-note">{{ PRICE_DISCLAIMER }}</span>
             </div>
 
@@ -308,7 +309,7 @@
 import { categories, items as staticItems } from '~/data/catalog.js'
 import { phoneMask } from '~/composables/usePhoneMask.js'
 import { getProductSpecs, getProductAdvantages, getProductCatDesc } from '~/composables/useProductSpecs.js'
-import { priceFrom, sellPrice, PRICE_DISCLAIMER } from '~/composables/usePrice.js'
+import { priceFrom, sellPrice, PRICE_DISCLAIMER, isWholesale, WHOLESALE_NOTE } from '~/composables/usePrice.js'
 const { addItem, hasItem } = useCart()
 
 const route = useRoute()
@@ -539,6 +540,7 @@ async function submitOrder() {
 .pp__price { font-size: 1.6rem; font-weight: 800; color: #e6b800; line-height: 1; }
 .pp__price--ask { font-size: 1.1rem; font-weight: 700; color: #999; }
 .pp__price-note { font-size: 0.72rem; color: #555; line-height: 1.4; }
+.pp__whole { font-size: 0.8rem; color: #c8974a; background: rgba(230,184,0,0.08); border: 1px solid rgba(230,184,0,0.2); border-radius: 8px; padding: 0.45rem 0.7rem; line-height: 1.4; }
 
 .pp__meta { background: rgba(255,255,255,0.025); border: 1px solid #1e1e1e; border-radius: 10px; padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
 .pp__meta-row { display: flex; gap: 0.75rem; font-size: 0.83rem; }

@@ -29,6 +29,11 @@ function sellPrice(it) {
   return null
 }
 
+const DISCLAIMER = 'Цены и наличие ориентировочны и не являются публичной офертой (ст. 437 ГК РФ). Уточняйте стоимость и наличие у менеджеров ДСР: +7 914 329-29-29.'
+const WHOLESALE_MAX = 500
+const VOLUME_NOTE = 'ВНИМАНИЕ: указана оптовая цена (за объём от 50 шт / 50 м). При меньшем количестве стоимость уточняйте у менеджеров.'
+const noteFor = (price) => (price <= WHOLESALE_MAX ? VOLUME_NOTE + ' ' : '') + DISCLAIMER
+
 // Требования Фарпоста: у каждого товара — уникальный артикул, состояние, статус наличия.
 const CONDITION = 'Новый'        // все товары новые
 const AVAILABILITY = 'в наличии' // поменяйте на 'под заказ', если товар под заказ
@@ -61,7 +66,7 @@ const rows = priced.map(it => ({
   'Ед. изм.': it.unit || 'шт',
   'Категория': clean(catMap[it.category] || it.category),
   'Фотография': photoUrl(it),
-  'Описание': clean(it.description),
+  'Описание': clean(it.description) + '. ' + noteFor(sellPrice(it)),
 }))
 
 const HEADER = ['Артикул', 'Наименование товара', 'Состояние', 'Цена, руб.', 'Наличие', 'Ед. изм.', 'Категория', 'Фотография', 'Описание']

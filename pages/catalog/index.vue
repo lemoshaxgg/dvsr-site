@@ -541,6 +541,7 @@
                 <div class="catalog-item__footer">
                   <div class="catalog-item__price-block">
                     <span v-if="priceFrom(item)" class="catalog-item__price">{{ priceFrom(item) }}</span>
+                    <span v-if="isWholesale(item)" class="catalog-item__whole" title="Оптовая цена — за объём от 50 шт / 50 м. При меньшем количестве уточняйте у менеджера.">опт · от 50 шт/м</span>
                     <span v-else class="catalog-item__price catalog-item__price--ask">Уточнить актуальную цену</span>
                   </div>
                   <button class="catalog-item__btn" @click.stop="openOrder(item)">Заявка</button>
@@ -582,6 +583,7 @@
           </button>
           <h2 class="modal__title">{{ orderItem.title }}</h2>
           <p class="modal__price" :class="{ 'modal__price--ask': !priceFrom(orderItem) }">{{ priceFrom(orderItem) || 'Уточнить актуальную цену' }}</p>
+          <p v-if="isWholesale(orderItem)" class="modal__whole">⚠ {{ WHOLESALE_NOTE }}</p>
 
           <form class="modal__form" @submit.prevent="submitOrder">
             <input v-model="orderForm.company" type="text" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true" />
@@ -632,7 +634,7 @@ const categories = (() => {
   return out
 })()
 const subcategories = { ...coreSubcategories, ...vkSubcategories }
-import { priceFrom, PRICE_DISCLAIMER } from '~/composables/usePrice.js'
+import { priceFrom, PRICE_DISCLAIMER, isWholesale, WHOLESALE_NOTE } from '~/composables/usePrice.js'
 import { parseQuery, scoreItem, searchItems } from '~/composables/useCatalogSearch.js'
 
 const catIconPaths = {
@@ -2137,6 +2139,7 @@ async function submitOrder() {
 .catalog-item__price-block { display: flex; flex-direction: column; gap: 0.1rem; flex: 1 1 auto; min-width: 0; }
 .catalog-item__price-label { font-size: 0.68rem; color: #444; text-transform: uppercase; letter-spacing: 0.1em; }
 .catalog-item__price { font-size: 1.15rem; font-weight: 700; color: #e6b800; }
+.catalog-item__whole { font-size: 0.68rem; color: #b0862e; line-height: 1.2; cursor: help; }
 .catalog-item__price--ask { font-size: 0.8rem; font-weight: 600; line-height: 1.2; color: #aaa; white-space: normal; }
 
 .catalog-item__btn {
@@ -2508,7 +2511,8 @@ async function submitOrder() {
 .modal__close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: #666; font-size: 1.1rem; cursor: pointer; transition: color 0.2s; }
 .modal__close:hover { color: #fff; }
 .modal__title { font-size: 1.3rem; font-weight: 700; color: #fff; margin-bottom: 0.25rem; }
-.modal__price { color: #e6b800; font-weight: 600; margin-bottom: 1.5rem; }
+.modal__price { color: #e6b800; font-weight: 600; margin-bottom: 0.5rem; }
+.modal__whole { font-size: 0.8rem; color: #c8974a; background: rgba(230,184,0,0.08); border: 1px solid rgba(230,184,0,0.2); border-radius: 8px; padding: 0.5rem 0.7rem; margin-bottom: 1.25rem; line-height: 1.4; }
 .modal__form { display: flex; flex-direction: column; gap: 0.85rem; }
 .modal__input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 0.75rem 1rem; color: #fff; font-size: 0.95rem; font-family: inherit; outline: none; transition: border-color 0.2s; }
 .modal__input:focus { border-color: #e6b800; }
