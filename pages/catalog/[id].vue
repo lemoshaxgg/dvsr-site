@@ -1,6 +1,9 @@
 <template>
   <div>
     <main v-if="item" class="pp">
+      <button class="pp__back-fab" @click="goBack" aria-label="Назад в каталог" title="Назад">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 18l-6-6 6-6"/></svg>
+      </button>
       <div class="pp__inner">
 
         <!-- Breadcrumb -->
@@ -313,7 +316,14 @@ import { priceFrom, sellPrice, PRICE_DISCLAIMER, isWholesale, WHOLESALE_NOTE } f
 const { addItem, hasItem } = useCart()
 
 const route = useRoute()
+const router = useRouter()
 const itemId = Number(route.params.id)
+
+// Назад: если есть история — на прежнее место каталога (скролл вернётся), иначе в каталог
+function goBack() {
+  if (import.meta.client && window.history.length > 1) router.back()
+  else router.push('/catalog')
+}
 const categoryMap = Object.fromEntries(categories.map(c => [c.id, c.label]))
 
 const { data: item } = await useAsyncData(`product-${itemId}`, async () => {
@@ -468,6 +478,16 @@ async function submitOrder() {
 
 <style scoped>
 .pp { min-height: 100vh; background: #0a0a0a; padding-bottom: 4rem; }
+.pp__back-fab {
+  position: fixed; top: 88px; left: 1.25rem; z-index: 50;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(18,18,18,0.92); border: 1px solid #333; color: #ccc;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(10px); box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+}
+.pp__back-fab:hover { background: #e6b800; color: #000; border-color: #e6b800; transform: translateX(-2px); }
+@media (max-width: 640px) { .pp__back-fab { top: 74px; left: 0.75rem; width: 40px; height: 40px; } }
 .pp__inner { max-width: 1160px; margin: 0 auto; padding: 6rem 1.5rem 2rem; }
 .pp__inner--center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 60vh; gap: 1rem; }
 

@@ -617,6 +617,8 @@
 </template>
 
 <script setup>
+// Каталог не пересобирается при возврате из карточки товара (сохраняет товары и позицию).
+definePageMeta({ keepalive: true })
 import { ref, computed, reactive, watch, nextTick, onMounted } from 'vue'
 import { phoneMask } from '~/composables/usePhoneMask.js'
 import { categories as coreCategories, items as staticItems, subcategories as coreSubcategories } from '~/data/catalog.js'

@@ -299,17 +299,7 @@ nuxtApp.hook('page:start', () => {
 nuxtApp.hook('page:finish', () => {
   clearTimeout(navTimer)
   routeLoading.value = false
-  // Мгновенный скролл наверх при смене пути (фикс мобилы: товар не открывается «внизу»).
-  // behavior:auto в обход глобального scroll-behavior:smooth — иначе гонка с out-in переходом.
-  const path = router.currentRoute.value.path
-  if (path !== lastPath && !window.location.hash) {
-    const html = document.documentElement
-    const prev = html.style.scrollBehavior
-    html.style.scrollBehavior = 'auto'
-    window.scrollTo(0, 0)
-    html.style.scrollBehavior = prev
-  }
-  lastPath = path
+  // Скроллом управляет app/router.options.ts (возврат на прежнее место при «назад»).
 })
 
 const showBackTop = ref(false)
