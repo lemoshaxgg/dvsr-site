@@ -345,11 +345,21 @@ const { data: item } = await useAsyncData(`product-${itemId}`, async () => {
   } catch { return null }
 })
 
+// Реальная картинка товара для OG/Schema (ядро — по id, партнёры — их фото, иначе логотип)
+const metaImage = computed(() => {
+  const it = item.value
+  if (!it) return 'https://dsr-dv.ru/og-dsr.jpg'
+  if (it.id < 1000) return `https://dsr-dv.ru/catalog/products/${it.id}.jpg`
+  const p = it.photo || (it.photos && it.photos[0])
+  if (!p) return 'https://dsr-dv.ru/og-dsr.jpg'
+  return /^https?:/i.test(p) ? p : 'https://dsr-dv.ru' + (p.startsWith('/') ? p : '/' + p)
+})
+
 useHead({ title: item.value ? `${item.value.title} — купить во Владивостоке | ДСР` : 'Товар не найден — ДСР' })
 useSeoMeta({
   description: item.value ? (item.value.description || `Купить ${item.value.title} во Владивостоке. ООО ДСР — строительные материалы и оборудование.`).slice(0, 160) : 'Страница товара не найдена.',
   ogTitle: item.value ? `${item.value.title} — ДСР Владивосток` : 'ДСР',
-  ogImage: `https://dsr-dv.ru/catalog/products/${itemId}.jpg`,
+  ogImage: () => metaImage.value,
   ogUrl: `https://dsr-dv.ru/catalog/${itemId}`,
   twitterCard: 'summary_large_image',
 })
@@ -365,7 +375,7 @@ useHead(() => {
     '@type': 'Product',
     name: it.title,
     description: (it.description || it.title),
-    image: `${SITE}/catalog/products/${it.id}.jpg`,
+    image: metaImage.value,
     sku: it.sku || String(it.id),
     category: categoryMap[it.category] || 'Каталог',
     brand: { '@type': 'Brand', name: 'ДСР' },
