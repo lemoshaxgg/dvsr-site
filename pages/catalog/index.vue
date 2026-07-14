@@ -512,7 +512,7 @@
               <NuxtLink :to="`/catalog/${item.id}`" class="catalog-item__link" :aria-label="item.title" />
               <div class="catalog-item__img">
                 <template v-if="item.photos && item.photos.length > 1">
-                  <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" loading="lazy" />
+                  <img :src="item.photos[getPhotoIdx(item.id)]" :alt="item.title" loading="lazy" decoding="async" />
                   <button class="ci-carousel__prev" aria-label="Предыдущее фото" @click.stop="prevPhoto(item.id, item.photos.length)">&#8249;</button>
                   <button class="ci-carousel__next" aria-label="Следующее фото" @click.stop="nextPhoto(item.id, item.photos.length)">&#8250;</button>
                   <div class="ci-carousel__dots">
@@ -523,6 +523,7 @@
                   :src="productPhoto(item)"
                   :alt="item.title"
                   loading="lazy"
+                  decoding="async"
                   @error="onPhotoError($event, item)"
                 />
                 <div v-else class="catalog-item__placeholder">
@@ -678,7 +679,7 @@ const { addItem, hasItem } = useCart()
 const items = reactive([...staticItems])
 const catalogPending = ref(true)
 
-onMounted(async () => {
+onMounted(() => {
   const loadJson = async (url) => {
     try {
       const r = await fetch(url)
@@ -686,26 +687,37 @@ onMounted(async () => {
     } catch { return [] }
   }
   const yield_ = () => new Promise(r => setTimeout(r, 0))
-  // Порядок = приоритет появления: ходовые категории (ядро, ПримСтройХаб, сантехника) раньше
-  const sources = [
-    '/data/catalog-items.json',
-    '/data/catalog-psh.json',
-    '/data/catalog-cs.json',
-    '/data/catalog-vk.json',
-    '/data/catalog-sig.json',
-    '/data/catalog-pd.json',
-  ]
-  // Прогрессивная подгрузка: каждый источник грузится и добавляется ПОРЦИЯМИ
-  // независимо от других → категории наполняются на глазах, страница не морозится,
-  // листать можно сразу. markRaw снимает глубокую реактивность (кратно быстрее).
-  await Promise.all(sources.map(async (url) => {
+  // Один источник → добавляется в общий список ПОРЦИЯМИ по 300 с отдачей кадра
+  // браузеру (markRaw снимает глубокую реактивность — кратно быстрее рендер).
+  const loadSource = async (url) => {
     const arr = await loadJson(url)
     for (let i = 0; i < arr.length; i += 300) {
       items.splice(items.length, 0, ...arr.slice(i, i + 300).map(markRaw))
-      await yield_() // отдаём кадр браузеру — товары появляются постепенно
+      await yield_()
     }
-  }))
-  catalogPending.value = false
+  }
+  // Ленивая двухволновая загрузка (было: все 6 файлов ~5 МБ разом на mount):
+  // Волна 1 — ходовое ядро + ПримСтройХаб (~1.4 МБ): быстрый первый рендер.
+  const primary = ['/data/catalog-items.json', '/data/catalog-psh.json']
+  // Волна 2 — тяжёлые партнёрские (сантехника/электрика/сигнал/ПЭ, ~3.8 МБ):
+  // в фоне после первой отрисовки, чтобы не конкурировать за поток в критический момент.
+  const secondary = ['/data/catalog-cs.json', '/data/catalog-vk.json', '/data/catalog-sig.json', '/data/catalog-pd.json']
+  // Если открыли ссылку на конкретную партнёрскую категорию — её файл в первую волну,
+  // чтобы товары не «висели» пустыми до фоновой догрузки.
+  const cat = String(route.query.cat || '')
+  let deepUrl = ''
+  if (cat.startsWith('vk_') || cat === 'cable') deepUrl = '/data/catalog-vk.json'
+  else if (cat.startsWith('sig')) deepUrl = '/data/catalog-sig.json'
+  else if (cat.startsWith('pd_')) deepUrl = '/data/catalog-pd.json'
+  else if (['plumbing', 'plastic', 'pipe', 'boiler', 'hardware', 'hatches'].includes(cat)) deepUrl = '/data/catalog-cs.json'
+  if (deepUrl && secondary.includes(deepUrl)) { primary.push(deepUrl); secondary.splice(secondary.indexOf(deepUrl), 1) }
+
+  Promise.all(primary.map(loadSource)).then(() => {
+    catalogPending.value = false
+    if (!secondary.length) return
+    const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 200))
+    idle(() => { Promise.all(secondary.map(loadSource)) })
+  })
 })
 
 useHead({ title: 'Каталог: заборы 3D, сваи, септики, стройматериалы — ДСР Владивосток' })
