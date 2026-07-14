@@ -139,6 +139,22 @@ export async function getLeadEvents(contactId: number | string): Promise<any[]> 
   return rows
 }
 
+// Время ответа: секунды от создания заявки до первого действия менеджера
+// (первое событие в таймлайне). sinceIso = null → за всё время.
+export async function getResponseTimeSecs(sinceIso: string | null): Promise<number[]> {
+  await ensureEventsTable()
+  const { rows } = await getPool().query(
+    `SELECT EXTRACT(EPOCH FROM (fe.first_at - c.created_at)) AS sec
+       FROM contacts c
+       JOIN (SELECT contact_id, MIN(created_at) AS first_at FROM lead_events GROUP BY contact_id) fe
+         ON fe.contact_id = c.id
+      WHERE fe.first_at > c.created_at
+        AND ($1::timestamptz IS NULL OR c.created_at >= $1)`,
+    [sinceIso],
+  )
+  return rows.map((r: any) => Number(r.sec)).filter((n: number) => n > 0 && Number.isFinite(n))
+}
+
 // ── Задачи и напоминания по сделкам ──
 let tasksTableReady = false
 export async function ensureTasksTable(): Promise<void> {

@@ -5,6 +5,7 @@
       <div class="crm__view-switch">
         <button :class="{ on: view === 'board' }" @click="view = 'board'">▦ Воронка</button>
         <button :class="{ on: view === 'list' }" @click="view = 'list'">☰ Список</button>
+        <button :class="{ on: view === 'stats' }" @click="view = 'stats'">📊 Аналитика</button>
       </div>
       <div class="crm__header-actions">
         <span v-if="mailMsg" class="crm__mail-msg">{{ mailMsg }}</span>
@@ -89,7 +90,7 @@
     </div>
 
     <!-- СПИСОК -->
-    <div v-else>
+    <div v-else-if="view === 'list'">
       <div class="crm__filters">
         <button v-for="f in listFilters" :key="f.key" class="crm__filter"
           :class="{ 'crm__filter--active': activeFilter === f.key }" @click="activeFilter = f.key">{{ f.label }}</button>
@@ -122,6 +123,73 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- АНАЛИТИКА -->
+    <div v-else-if="view === 'stats'" class="stats">
+      <div class="stats__period">
+        <button v-for="p in STAT_PERIODS" :key="p.label" class="stats__per"
+          :class="{ on: statsDays === p.days }" @click="statsDays = p.days">{{ p.label }}</button>
+        <span class="stats__count">заявок за период: <b>{{ statsLeads.length }}</b></span>
+      </div>
+
+      <div class="stats__kpis">
+        <div class="stats__kpi"><div class="stats__kpi-num">{{ kpi.received }}</div><div class="stats__kpi-lbl">Получено</div></div>
+        <div class="stats__kpi"><div class="stats__kpi-num" style="color:#4caf50">{{ kpi.won }}</div><div class="stats__kpi-lbl">Успешно</div></div>
+        <div class="stats__kpi"><div class="stats__kpi-num" style="color:#777">{{ kpi.lost }}</div><div class="stats__kpi-lbl">Отказ</div></div>
+        <div class="stats__kpi"><div class="stats__kpi-num" style="color:#4da6ff">{{ kpi.active }}</div><div class="stats__kpi-lbl">В работе</div></div>
+        <div class="stats__kpi"><div class="stats__kpi-num" style="color:#e6b800">{{ kpi.convClose }}%</div><div class="stats__kpi-lbl">Конверсия в продажу<span class="stats__kpi-hint">успех / (успех+отказ)</span></div></div>
+        <div class="stats__kpi"><div class="stats__kpi-num">{{ kpi.avgCheck ? fmtMoney(kpi.avgCheck) : '—' }}</div><div class="stats__kpi-lbl">Средний чек<span class="stats__kpi-hint">оценочно, где указана цена</span></div></div>
+      </div>
+
+      <div class="stats__grid">
+        <div class="stats__box">
+          <div class="stats__box-h">Распределение по этапам</div>
+          <div v-for="f in funnel" :key="f.key" class="stats__fun">
+            <div class="stats__fun-lbl">{{ f.label }}</div>
+            <div class="stats__fun-bar"><div class="stats__fun-fill" :style="{ width: f.pct + '%', background: f.color }"></div></div>
+            <div class="stats__fun-val">{{ f.count }} <span class="stats__fun-pct">{{ f.pct }}%</span></div>
+          </div>
+        </div>
+
+        <div class="stats__box">
+          <div class="stats__box-h">Заявки по дням <span class="stats__box-sub">(14 дней)</span></div>
+          <div class="stats__spark">
+            <div v-for="d in daily" :key="d.date" class="stats__spark-col" :title="d.label + ': ' + d.count">
+              <div class="stats__spark-barwrap"><div class="stats__spark-bar" :style="{ height: Math.round(d.count / dailyMax * 100) + '%' }"></div></div>
+              <div class="stats__spark-x">{{ d.dm }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats__box">
+          <div class="stats__box-h">Источники</div>
+          <table class="stats__tbl">
+            <thead><tr><th>Источник</th><th>Заявок</th><th>Успешно</th><th>Конв.</th></tr></thead>
+            <tbody>
+              <tr v-for="s in sources" :key="s.key"><td>{{ s.label }}</td><td>{{ s.total }}</td><td>{{ s.won }}</td><td>{{ s.conv }}%</td></tr>
+              <tr v-if="!sources.length"><td colspan="4" class="stats__muted">Нет данных</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="stats__box">
+          <div class="stats__box-h">Менеджеры</div>
+          <table class="stats__tbl">
+            <thead><tr><th>Менеджер</th><th>Заявок</th><th>Успешно</th><th>Конв.</th></tr></thead>
+            <tbody>
+              <tr v-for="m in managers" :key="m.key"><td>{{ m.name }}</td><td>{{ m.total }}</td><td>{{ m.won }}</td><td>{{ m.conv }}%</td></tr>
+              <tr v-if="!managers.length"><td colspan="4" class="stats__muted">Нет данных</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="stats__kpis">
+        <div class="stats__kpi"><div class="stats__kpi-num">{{ resp.avgSec != null ? fmtDur(resp.avgSec) : '—' }}</div><div class="stats__kpi-lbl">Среднее время ответа<span class="stats__kpi-hint">до первого действия</span></div></div>
+        <div class="stats__kpi"><div class="stats__kpi-num">{{ resp.medianSec != null ? fmtDur(resp.medianSec) : '—' }}</div><div class="stats__kpi-lbl">Медианное время ответа</div></div>
+        <div class="stats__kpi"><div class="stats__kpi-num" :style="{ color: kpi.newUnworked ? '#e6b800' : '#4caf50' }">{{ kpi.newUnworked }}</div><div class="stats__kpi-lbl">Необработанных<span class="stats__kpi-hint">в этапе «Новая»</span></div></div>
       </div>
     </div>
 
@@ -386,6 +454,121 @@ async function setAssignee(lead, uid) {
   } catch {}
 }
 
+// ── Аналитика воронки ──
+const STAT_PERIODS = [
+  { days: 7, label: '7 дней' },
+  { days: 30, label: '30 дней' },
+  { days: 90, label: '90 дней' },
+  { days: null, label: 'Всё время' },
+]
+const statsDays = ref(30)
+const statsLeads = computed(() => {
+  const d = statsDays.value
+  if (!d) return leads.value
+  const since = Date.now() - d * 86400000
+  return leads.value.filter((l) => l.created_at && new Date(l.created_at).getTime() >= since)
+})
+
+function parsePrice(s) {
+  if (!s) return 0
+  const m = String(s).replace(/[  ]/g, " ").match(/d[d ]*d|d/)
+  if (!m) return 0
+  const n = Number(m[0].replace(/ /g, ""))
+  return n >= 100 && n <= 100000000 ? n : 0
+}
+const fmtMoney = (n) => new Intl.NumberFormat('ru-RU').format(Math.round(n)) + ' ₽'
+function fmtDur(sec) {
+  if (sec == null) return '—'
+  const m = Math.round(sec / 60)
+  if (m < 60) return m + ' мин'
+  const h = Math.floor(m / 60)
+  if (h < 24) return h + ' ч ' + (m % 60) + ' мин'
+  const dd = Math.floor(h / 24)
+  return dd + ' дн ' + (h % 24) + ' ч'
+}
+
+const kpi = computed(() => {
+  const L = statsLeads.value
+  const received = L.length
+  const won = L.filter((l) => stageOf(l) === 'won').length
+  const lost = L.filter((l) => stageOf(l) === 'lost').length
+  const newUnworked = L.filter((l) => stageOf(l) === 'new').length
+  const active = Math.max(0, received - won - lost - newUnworked)
+  const convClose = won + lost ? Math.round((won / (won + lost)) * 100) : 0
+  const prices = L.filter((l) => stageOf(l) === 'won').map((l) => parsePrice(l.item_price)).filter(Boolean)
+  const avgCheck = prices.length ? Math.round(prices.reduce((s, x) => s + x, 0) / prices.length) : 0
+  return { received, won, lost, active, newUnworked, convClose, avgCheck }
+})
+
+const funnel = computed(() => {
+  const L = statsLeads.value
+  const total = L.length || 1
+  return STAGES.map((st) => {
+    const count = L.filter((l) => stageOf(l) === st.key).length
+    return { key: st.key, label: st.label, color: st.color, count, pct: Math.round((count / total) * 100) }
+  })
+})
+
+const SOURCE_LABELS = { site: 'Сайт', email: 'Почта' }
+const sources = computed(() => {
+  const map = {}
+  for (const l of statsLeads.value) {
+    const k = l.source || 'site'
+    map[k] = map[k] || { total: 0, won: 0 }
+    map[k].total++
+    if (stageOf(l) === 'won') map[k].won++
+  }
+  return Object.entries(map).map(([key, v]) => ({
+    key, label: SOURCE_LABELS[key] || key, total: v.total, won: v.won,
+    conv: v.total ? Math.round((v.won / v.total) * 100) : 0,
+  })).sort((a, b) => b.total - a.total)
+})
+
+const managers = computed(() => {
+  const map = {}
+  for (const l of statsLeads.value) {
+    const key = l.assignee ? String(l.assignee) : '—'
+    map[key] = map[key] || { total: 0, won: 0 }
+    map[key].total++
+    if (stageOf(l) === 'won') map[key].won++
+  }
+  return Object.entries(map).map(([key, v]) => ({
+    key, name: key === '—' ? 'Не назначен' : (staffName(key) || 'Менеджер #' + key),
+    total: v.total, won: v.won, conv: v.total ? Math.round((v.won / v.total) * 100) : 0,
+  })).sort((a, b) => b.total - a.total)
+})
+
+const daily = computed(() => {
+  const N = 14
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const counts = {}
+  for (const l of leads.value) {
+    if (!l.created_at) continue
+    const d = new Date(l.created_at); d.setHours(0, 0, 0, 0)
+    counts[d.getTime()] = (counts[d.getTime()] || 0) + 1
+  }
+  const arr = []
+  for (let i = N - 1; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i)
+    arr.push({
+      date: d.getTime(), count: counts[d.getTime()] || 0,
+      dm: String(d.getDate()).padStart(2, '0'),
+      label: d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }),
+    })
+  }
+  return arr
+})
+const dailyMax = computed(() => Math.max(1, ...daily.value.map((d) => d.count)))
+
+const resp = ref({ avgSec: null, medianSec: null, n: 0 })
+async function loadResp() {
+  try {
+    const r = await $fetch('/api/admin/stats', { params: { days: statsDays.value || '' } })
+    resp.value = r && r.resp ? r.resp : { avgSec: null, medianSec: null, n: 0 }
+  } catch { resp.value = { avgSec: null, medianSec: null, n: 0 } }
+}
+watch([view, statsDays], () => { if (view.value === 'stats') loadResp() })
+
 // ── Задачи и напоминания ──
 const openTasks = ref([])
 async function loadTasks() { try { openTasks.value = await $fetch('/api/admin/tasks') } catch { openTasks.value = [] } }
@@ -481,6 +664,44 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
 .crm__stat:hover { border-color: #444; }
 .crm__stat-num { font-size: 1.75rem; font-weight: 700; color: #fff; }
 .crm__stat-lbl { font-size: 0.78rem; color: #666; margin-top: 0.2rem; }
+
+/* ── Аналитика ── */
+.stats { display: flex; flex-direction: column; gap: 1.25rem; }
+.stats__period { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.stats__per { background: #161616; border: 1px solid #2a2a2a; color: #999; padding: 0.4rem 0.9rem; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.82rem; transition: all 0.12s; }
+.stats__per:hover { color: #fff; border-color: #555; }
+.stats__per.on { background: #e6b800; color: #000; font-weight: 600; border-color: #e6b800; }
+.stats__count { margin-left: auto; font-size: 0.82rem; color: #777; }
+.stats__count b { color: #fff; }
+.stats__kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.85rem; }
+.stats__kpi { background: #161616; border: 1px solid #222; border-radius: 12px; padding: 1rem 1.1rem; }
+.stats__kpi-num { font-size: 1.6rem; font-weight: 700; color: #fff; line-height: 1.1; }
+.stats__kpi-lbl { font-size: 0.76rem; color: #777; margin-top: 0.35rem; }
+.stats__kpi-hint { display: block; font-size: 0.68rem; color: #555; margin-top: 0.1rem; }
+.stats__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.stats__box { background: #161616; border: 1px solid #222; border-radius: 12px; padding: 1.1rem 1.25rem; }
+.stats__box-h { font-size: 0.9rem; font-weight: 600; color: #ddd; margin-bottom: 0.9rem; }
+.stats__box-sub { font-size: 0.72rem; color: #666; font-weight: 400; }
+.stats__fun { display: grid; grid-template-columns: 90px 1fr 70px; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+.stats__fun-lbl { font-size: 0.78rem; color: #aaa; white-space: nowrap; }
+.stats__fun-bar { height: 16px; background: #0e0e0e; border-radius: 5px; overflow: hidden; }
+.stats__fun-fill { height: 100%; border-radius: 5px; min-width: 2px; transition: width 0.3s; }
+.stats__fun-val { font-size: 0.78rem; color: #fff; text-align: right; white-space: nowrap; }
+.stats__fun-pct { color: #666; font-size: 0.72rem; }
+.stats__spark { display: flex; align-items: flex-end; gap: 3px; height: 130px; }
+.stats__spark-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.stats__spark-barwrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.stats__spark-bar { width: 100%; background: linear-gradient(#e6b800, #b38f00); border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.3s; }
+.stats__spark-x { font-size: 0.6rem; color: #555; margin-top: 0.3rem; }
+.stats__tbl { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.stats__tbl th { text-align: left; color: #666; font-weight: 600; padding: 0.35rem 0.5rem; border-bottom: 1px solid #222; }
+.stats__tbl td { padding: 0.4rem 0.5rem; color: #ccc; border-bottom: 1px solid #1a1a1a; }
+.stats__tbl th:not(:first-child), .stats__tbl td:not(:first-child) { text-align: right; white-space: nowrap; }
+.stats__muted { color: #555; text-align: center !important; }
+@media (max-width: 900px) {
+  .stats__kpis { grid-template-columns: repeat(3, 1fr); }
+  .stats__grid { grid-template-columns: 1fr; }
+}
 
 /* ── Канбан ── */
 .crm__cols { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: 0.75rem; overflow-x: auto; padding-bottom: 0.5rem; align-items: start; }
