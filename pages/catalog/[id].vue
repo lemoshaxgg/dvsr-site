@@ -125,11 +125,11 @@
                 </svg>
                 {{ copied ? 'Скопировано!' : 'Копировать ссылку' }}
               </button>
-              <a href="/catalog" class="pp__back">
+              <a href="/catalog" class="pp__back" @click.prevent="goBack">
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24">
                   <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M19 12H5M12 5l-7 7 7 7"/>
                 </svg>
-                В каталог
+                Назад
               </a>
             </div>
           </div>
