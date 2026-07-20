@@ -29,9 +29,8 @@ function sellPrice(it) {
   return null
 }
 
-const DISCLAIMER = 'Цены и наличие ориентировочны и не являются публичной офертой (ст. 437 ГК РФ). Уточняйте стоимость и наличие у менеджеров.'
+const DISCLAIMER = 'Цены и наличие ориентировочны и не являются публичной офертой (ст. 437 ГК РФ). Уточняйте стоимость и наличие у менеджеров ДСР: +7 914 329-29-29.'
 const WHOLESALE_MAX = 500
-const MIN_PRICE = 50 // копеечную мелочь (<50₽) в прайс не включаем
 const VOLUME_NOTE = 'ВНИМАНИЕ: указана оптовая цена (за объём от 50 шт / 50 м). При меньшем количестве стоимость уточняйте у менеджеров.'
 const noteFor = (price) => (price <= WHOLESALE_MAX ? VOLUME_NOTE + ' ' : '') + DISCLAIMER
 
@@ -55,7 +54,7 @@ const all = [...items, ...vkItems, ...sigItems, ...pdItems, ...csItems, ...pshIt
 // Фарпост принимает прайс только с конкретными товарами и реальными ценами.
 // Позиции без цены — это обобщённые «ассортиментные» строки (Смесители, Насосы,
 // Запорная арматура и т.п.) и услуги → в прайс не включаем (иначе отказ).
-const priced = all.filter(it => { const p = sellPrice(it); return p && p >= MIN_PRICE })
+const priced = all.filter(it => sellPrice(it))
 const skipped = all.length - priced.length
 
 const rows = priced.map(it => ({

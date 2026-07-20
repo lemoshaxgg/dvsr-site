@@ -13,13 +13,10 @@ const MARKUP = 1.15
 // Защитный дисклеймер под каждым товаром: цена не является публичной офертой.
 const DISCLAIMER =
   'Цены и наличие указаны ориентировочно и не являются публичной офертой (ст. 437 ГК РФ). ' +
-  'Уточняйте актуальную стоимость и наличие товара у менеджеров.'
+  'Уточняйте актуальную стоимость и наличие товара у менеджеров ДСР: +7 914 329-29-29.'
 
 // Для недорогих позиций цена оптовая — зависит от объёма.
 const WHOLESALE_MAX = 500
-
-// Не выгружаем в Фарпост копеечную мелочь дешевле этого (гильзы/болты/разъёмы).
-const MIN_PRICE = 50
 const VOLUME_NOTE =
   'ВНИМАНИЕ: указана оптовая цена (за объём от 50 шт / 50 м). ' +
   'При меньшем количестве стоимость уточняйте у менеджеров.'
@@ -57,7 +54,7 @@ let cacheAt = 0
 
 function build(): string {
   const all = [...items, ...vkItems, ...sigItems, ...pdItems, ...csItems, ...pshItems]
-  const priced = all.filter((it) => { const p = sellPrice(it); return p && p >= MIN_PRICE })
+  const priced = all.filter((it) => sellPrice(it))
 
   const catId: Record<string, number> = {}
   let ci = 1
@@ -90,7 +87,7 @@ function build(): string {
   const date = new Date().toISOString().slice(0, 16).replace('T', ' ')
   return `<?xml version="1.0" encoding="UTF-8"?>\n`
     + `<yml_catalog date="${date}">\n<shop>\n`
-    + `<name>ДСР</name>\n<company>ООО «Дальневосточные Системы Развития»</company>\n`
+    + `<name>ДСР</name>\n<company>ООО «Дальневосточные Системы Развития»</company>\n<url>${SITE}</url>\n`
     + `<currencies><currency id="RUB" rate="1"/></currencies>\n`
     + `<categories>\n${catLines.join('\n')}\n</categories>\n`
     + `<offers>\n${offers.join('\n')}\n</offers>\n`
