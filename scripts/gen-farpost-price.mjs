@@ -24,14 +24,21 @@ function clean(s) {
 
 const MARKUP = 1.15
 function sellPrice(it) {
-  if (it.fixedPrice) return Math.round(it.fixedPrice)
-  if (it.basePrice) return Math.round((it.basePrice * MARKUP) / 10) * 10
-  return null
+  let p = it.fixedPrice ? Math.round(it.fixedPrice)
+    : it.basePrice ? Math.round((it.basePrice * MARKUP) / 10) * 10 : null
+  // Защита наценки: у копеечной мелочи округление базы «до 10 вниз» опускало цену
+  // ниже закупки. Для позиций ≤500 держим пол «не ниже закупки × наценка».
+  if (p != null && p <= 500 && it.buyPrice) p = Math.max(p, Math.ceil((it.buyPrice * MARKUP) / 10) * 10)
+  return p
 }
+
+// Оставляем дешёвую (≤500) мелочь только для проводов/кабеля и фитингов.
+const FIT_KW = /фитинг|муфт|тройник|отвод|переход|ниппель|сгон|американк|крестовин|заглушк|футорк|штуцер|уплотнительн|компрессионн/i
+const keepCheap = (it) => it.category === 'cable' || it.category === 'pd_fittings' || FIT_KW.test(it.title || '')
 
 const DISCLAIMER = 'Цены и наличие ориентировочны и не являются публичной офертой (ст. 437 ГК РФ). Уточняйте стоимость и наличие у менеджеров ДСР: +7 914 329-29-29.'
 const WHOLESALE_MAX = 500
-const VOLUME_NOTE = 'ВНИМАНИЕ: указана оптовая цена (за объём от 50 шт / 50 м). При меньшем количестве стоимость уточняйте у менеджеров.'
+const VOLUME_NOTE = 'Только оптом, от 50 шт (50 м). Мелкие позиции отпускаются партией; стоимость за меньшее количество уточняйте у менеджеров.'
 const noteFor = (price) => (price <= WHOLESALE_MAX ? VOLUME_NOTE + ' ' : '') + DISCLAIMER
 
 // Требования Фарпоста: у каждого товара — уникальный артикул, состояние, статус наличия.
@@ -54,7 +61,7 @@ const all = [...items, ...vkItems, ...sigItems, ...pdItems, ...csItems, ...pshIt
 // Фарпост принимает прайс только с конкретными товарами и реальными ценами.
 // Позиции без цены — это обобщённые «ассортиментные» строки (Смесители, Насосы,
 // Запорная арматура и т.п.) и услуги → в прайс не включаем (иначе отказ).
-const priced = all.filter(it => sellPrice(it))
+const priced = all.filter(it => { const p = sellPrice(it); return p != null && (p > 500 || keepCheap(it)) })
 const skipped = all.length - priced.length
 
 const rows = priced.map(it => ({

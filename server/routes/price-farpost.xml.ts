@@ -15,16 +15,24 @@ const DISCLAIMER =
   'Цены и наличие указаны ориентировочно и не являются публичной офертой (ст. 437 ГК РФ). ' +
   'Уточняйте актуальную стоимость и наличие товара у менеджеров ДСР: +7 914 329-29-29.'
 
-// Для недорогих позиций цена оптовая — зависит от объёма.
+// Мелкие позиции (провода/кабель и фитинги) отпускаются только оптом.
 const WHOLESALE_MAX = 500
 const VOLUME_NOTE =
-  'ВНИМАНИЕ: указана оптовая цена (за объём от 50 шт / 50 м). ' +
-  'При меньшем количестве стоимость уточняйте у менеджеров.'
+  'Только оптом, от 50 шт (50 м). Мелкие позиции отпускаются партией; ' +
+  'стоимость за меньшее количество уточняйте у менеджеров.'
+
+// Оставляем дешёвую (≤500) мелочь только для проводов/кабеля и фитингов.
+const FIT_KW = /фитинг|муфт|тройник|отвод|переход|ниппель|сгон|американк|крестовин|заглушк|футорк|штуцер|уплотнительн|компрессионн/i
+const keepCheap = (it: any): boolean =>
+  it.category === 'cable' || it.category === 'pd_fittings' || FIT_KW.test(it.title || '')
 
 function sellPrice(it: any): number | null {
-  if (it.fixedPrice) return Math.round(it.fixedPrice)
-  if (it.basePrice) return Math.round((it.basePrice * MARKUP) / 10) * 10
-  return null
+  let p = it.fixedPrice ? Math.round(it.fixedPrice)
+    : it.basePrice ? Math.round((it.basePrice * MARKUP) / 10) * 10 : null
+  // Защита наценки: у копеечной мелочи округление базы «до 10 вниз» опускало цену
+  // ниже закупки. Для позиций ≤500 держим пол «не ниже закупки × наценка».
+  if (p != null && p <= 500 && it.buyPrice) p = Math.max(p, Math.ceil((it.buyPrice * MARKUP) / 10) * 10)
+  return p
 }
 
 const catMap: Record<string, string> = {}
@@ -54,7 +62,7 @@ let cacheAt = 0
 
 function build(): string {
   const all = [...items, ...vkItems, ...sigItems, ...pdItems, ...csItems, ...pshItems]
-  const priced = all.filter((it) => sellPrice(it))
+  const priced = all.filter((it) => { const p = sellPrice(it); return p != null && (p > 500 || keepCheap(it)) })
 
   const catId: Record<string, number> = {}
   let ci = 1
