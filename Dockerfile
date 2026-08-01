@@ -26,7 +26,4 @@ COPY --from=build /app/.output ./.output
 
 EXPOSE 3000
 
-# Контейнер сам сообщает о готовности — стучимся на РЕАЛЬНЫЙ порт ($PORT), путь / отдаёт 200.
-HEALTHCHECK --interval=15s --timeout=5s --start-period=25s --retries=5 CMD wget -qO /dev/null "http://127.0.0.1:${PORT:-3000}/" || exit 1
-
 CMD ["node", ".output/server/index.mjs"]
