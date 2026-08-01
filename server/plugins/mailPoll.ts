@@ -3,6 +3,14 @@ import { isMailConfigured, syncMailToLeads } from '~/server/utils/mailImap'
 // Фоновая проверка входящей почты → заявки в CRM. Работает, только если задан IMAP.
 // Интервал: MAIL_POLL_MINUTES (по умолчанию 5 мин). Первый прогон через 30с после старта.
 export default defineNitroPlugin(() => {
+  // ⛔ ВРЕМЕННО ВЫКЛЮЧЕН. Поллер тянул из почты письма ЦЕЛИКОМ (с вложениями) и парсил
+  // их — на маленьком тарифе это раздувало память, контейнер убивало по OOM → крэш-петля
+  // → сайт лежал. Плюс он всё равно не пускается на Mail.ru (протух пароль внешнего
+  // приложения). Включить обратно после починки почты: задать env MAIL_POLL_ENABLED=1.
+  if (process.env.MAIL_POLL_ENABLED !== '1') {
+    console.log('[mailPoll] выключен (для включения задайте env MAIL_POLL_ENABLED=1)')
+    return
+  }
   if (!isMailConfigured()) return
   const minutes = Math.max(1, Number(process.env.MAIL_POLL_MINUTES || 5))
 
