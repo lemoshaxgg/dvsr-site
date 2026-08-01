@@ -104,6 +104,16 @@ export async function syncMailToLeads(): Promise<{ ok: boolean; checked: number;
     host: HOST, port: PORT, secure: true,
     auth: { user: process.env.MAIL_IMAP_USER!, pass: process.env.MAIL_IMAP_PASS! },
     logger: false,
+    // Таймауты: не висеть на «мёртвом» сокете (Mail.ru любит рвать TLS/троттлить).
+    connectionTimeout: 10_000,
+    greetingTimeout: 8_000,
+    socketTimeout: 30_000,
+  })
+
+  // ВАЖНО: без слушателя 'error' imapflow роняет ВЕСЬ процесс unhandledRejection'ом,
+  // когда Mail.ru обрывает TLS или троттлит. Гасим здесь — poll просто пропустит цикл.
+  client.on('error', (err: any) => {
+    console.warn('[mailImap] соединение:', err?.code || err?.responseText || err?.message || err)
   })
 
   let checked = 0, imported = 0
@@ -169,7 +179,7 @@ export async function syncMailToLeads(): Promise<{ ok: boolean; checked: number;
     } finally {
       lock.release()
     }
-    await client.logout()
+    try { await client.logout() } catch { try { client.close() } catch { /* ignore */ } }
     return { ok: true, checked, imported }
   } catch (e: any) {
     // Собираем максимально информативную причину (ответ сервера Mail.ru)
@@ -181,7 +191,7 @@ export async function syncMailToLeads(): Promise<{ ok: boolean; checked: number;
       e?.message,
     ].filter(Boolean).join(' | ')
     console.error('mail sync error:', detail)
-    try { await client.logout() } catch { /* ignore */ }
+    try { client.close() } catch { /* ignore */ }
     return { ok: false, checked, imported, reason: detail || 'error' }
   } finally {
     running = false
